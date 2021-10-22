@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Edouard Fouché
+ * Copyright (C) 2018 Edouard Fouché
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,10 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package io.github.edouardfouche.utils
+package logic.index
 
-import org.apache.commons.math3.special.Erf
+/**
+  * Created by fouchee on 07.07.17.
+  */
+trait Slicer[U] {
+  type S = Array[T]
+  type T = Array[U]
 
-object HalfGaussian {
-  def cdf(x: Double): Double = Erf.erf(x / math.sqrt(2))
+  def mean(xs: Array[Int]): Float = xs.sum / xs.length.toFloat
 }
