@@ -16,43 +16,50 @@
  */
 package logic.index
 
+import scala.collection.parallel.ForkJoinTaskSupport
+
 /**
   * A very simple index structure will only the ranks (convenient for HiCS for example)
   * @param values
-  * @param parallelize
   */
-class RankIndex(val values: Array[Array[Double]], val parallelize: Int = 0) extends Index {
+class RankIndex(val values: Array[Array[Double]]) extends Index {
   type T = Int
 
+  /**
+   * Return the rank logic.index structure (as in HiCS).
+   *
+   * Note that the numbers might be different in the case of ties, in comparison with other implementations.
+   *
+   * @param input A 2-D Array of Double (data set, column-oriented).
+   * @return A 2-D Array of Int, where the element is the original logic.index in the unsorted data set
+   */
   def createIndex(input: Array[Array[Double]]): Array[Array[T]] = {
-    Preprocess.ksRankSimple(input, parallelize)
+    input.map(_.zipWithIndex.sortBy(_._1).map(x => x._2))
   }
 
-  def randomSlice(dimensions: Set[Int], referenceDim: Int, sliceSize: Int): Array[Boolean] = {
-    Slicing1.randomSlice(this.index, dimensions, referenceDim, sliceSize)
+  def slice_with_ref_dim(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean] = {
+    val m = this.index
+    val logicalArray = Array.fill[Boolean](m(0).length)(true)
+    for {dim <- dims.filter(_ != ref_dim)} {
+      val sliceStart = scala.util.Random.nextInt((m(0).length - sliceSize).max(1))
+      for {x <- 0 until sliceStart} {logicalArray(m(dim)(x)) = false}
+      for {x <- sliceStart + sliceSize until m(0).length} {logicalArray(m(dim)(x)) = false}
+    }
+    logicalArray
   }
 
-  def allSlice(dimensions: Set[Int], sliceSize: Int): Array[Boolean] = {
-    Slicing1.allSlice(this.index, dimensions, sliceSize)
+  def slice_without_ref_dim(dimensions: Set[Int], sliceSize: Int): Array[Boolean] = {
+    val m = this.index
+    val logicalArray = Array.fill[Boolean](m(0).length)(true)
+    for {dim <- dimensions} {
+      val sliceStart = scala.util.Random.nextInt((m(0).length - sliceSize).max(1))
+      for {x <- 0 until sliceStart} {
+        logicalArray(m(dim)(x)) = false
+      }
+      for {x <- sliceStart + sliceSize until m(0).length} {
+        logicalArray(m(dim)(x)) = false
+      }
+    }
+    logicalArray
   }
-
-  def safeSlice(dimensions: Set[Int], referenceDim: Int, sliceSize: Int): Array[Boolean] = {
-    Slicing1.safeSlice(this.index, dimensions, referenceDim, sliceSize)
-  }
-
-  // the slicing scheme used for conditional independence
-  def simpleSlice(dimension: Int, sliceSize: Int): this.type = {
-    //Slicing1.simpleSlice(this.index, dimension, sliceSize)
-    this
-  }
-
-  def restrictedSafeRandomSlice(dimensions: Set[Int], referenceDim: Int, alpha: Double): Array[Boolean] = {
-    Slicing1.restrictedSafeRandomSlice(this.index, dimensions, referenceDim, alpha)
-  }
-
-  def restrictedRandomSlice(dimensions: Set[Int], referenceDim: Int, alpha: Double): Array[Boolean] = {
-    Slicing1.restrictedRandomSlice(this.index, dimensions, referenceDim, alpha)
-  }
-
-  def getSafeCut(cut: Int, reference: Int): Int = cut
 }
