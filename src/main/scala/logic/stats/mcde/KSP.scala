@@ -28,11 +28,12 @@ case class KSP(M: Int = 50, alpha: Double = 0.5, var parallelize: Int = 0) exten
     //require(reference.length == indexSelection.length, "reference and indexSelection should have the same size")
 
     val ref = m(ref_dim)
+    print(ref.mkString("Array(", ", ", ")"))
 
     val inSlize = indexSelection.count(_ == true)
     val outSlize = ref.length - inSlize
 
-    if (inSlize == 0 || outSlize == 0) 1.0 // If one is empty they are perfectly diffrent --> score = 1 (and no prob with division by 0)
+    if (inSlize == 0 || outSlize == 0) return 1.0 // If one is empty they are perfectly diffrent --> score = 1 (and no prob with division by 0)
 
     val selectIncrement = 1.0 / inSlize
     val refIncrement = 1.0 / outSlize
@@ -49,6 +50,10 @@ case class KSP(M: Int = 50, alpha: Double = 0.5, var parallelize: Int = 0) exten
       }
     }
 
+    val D = cumulative(0, 0, 0, 0)
+    val p = get_p_from_D(D, inSlize, outSlize)
+    p
+  }
 
     /**
      * Convert the D value into a p-value
@@ -76,10 +81,5 @@ case class KSP(M: Int = 50, alpha: Double = 0.5, var parallelize: Int = 0) exten
 
       if(n1 >= 3037000499L && n2 >= 3037000499L) 1 - 2 * loop(0, 1, 1000, infi_exp) // squaring n1,n2 will reach the limit of Long
       else 1 - 2 * loop(0, 1, 1000, exp)
-
-    }
-    val D = cumulative(0, 0, 0, 0)
-    val p = get_p_from_D(D, inSlize, outSlize)
-    p
   }
 }

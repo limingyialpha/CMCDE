@@ -1,0 +1,3 @@
+import logic.experiments.iterate_vs_uniform_iterate_conv_speed
+
+iterate_vs_uniform_iterate_conv_speed.run()

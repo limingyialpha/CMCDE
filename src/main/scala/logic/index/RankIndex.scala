@@ -48,6 +48,20 @@ class RankIndex(val values: Array[Array[Double]]) extends Index {
     logicalArray
   }
 
+  // each time, a slice of size sliceSize of trues will be chosen
+  def slice_with_ref_dim_uniform(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean] = {
+    val m = this.index
+    val logicalArray = Array.fill[Boolean](m(0).length)(true)
+    for {dim <- dims.filter(_ != ref_dim)} {
+      val counter_slice_size = m(0).length-sliceSize
+      val counter_sliceStart = scala.util.Random.nextInt((m(0).length).max(1))
+      val to_set_false = (counter_sliceStart until counter_sliceStart + counter_slice_size-1)
+        .map(x => x % m(0).length)
+      for {x <- to_set_false} {logicalArray(m(dim)(x)) = false}
+    }
+    logicalArray
+  }
+
   def slice_without_ref_dim(dimensions: Set[Int], sliceSize: Int): Array[Boolean] = {
     val m = this.index
     val logicalArray = Array.fill[Boolean](m(0).length)(true)
@@ -59,6 +73,19 @@ class RankIndex(val values: Array[Array[Double]]) extends Index {
       for {x <- sliceStart + sliceSize until m(0).length} {
         logicalArray(m(dim)(x)) = false
       }
+    }
+    logicalArray
+  }
+
+  def slice_without_ref_dim_uniform(dimensions: Set[Int], sliceSize: Int): Array[Boolean] = {
+    val m = this.index
+    val logicalArray = Array.fill[Boolean](m(0).length)(true)
+    for {dim <- dimensions} {
+      val counter_slice_size = m(0).length-sliceSize
+      val counter_sliceStart = scala.util.Random.nextInt((m(0).length).max(1))
+      val to_set_false = (counter_sliceStart until counter_sliceStart + counter_slice_size-1)
+        .map(x => x % m(0).length)
+      for {x <- to_set_false} {logicalArray(m(dim)(x)) = false}
     }
     logicalArray
   }

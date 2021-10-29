@@ -43,6 +43,7 @@ trait Index {
     */
   def slice_with_ref_dim(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean]
 
+  def slice_with_ref_dim_uniform(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean]
 
   /**
    * Returns an array of booleans specifying the two disjoint sets of the observations for further
@@ -55,4 +56,7 @@ trait Index {
    * for further statistical tests. True corresponds to the set 1 and false corresponds to the set 2.
    */
   def slice_without_ref_dim(dims: Set[Int], sliceSize: Int): Array[Boolean]
+
+
+  def slice_without_ref_dim_uniform(dims: Set[Int], sliceSize: Int): Array[Boolean]
 }
