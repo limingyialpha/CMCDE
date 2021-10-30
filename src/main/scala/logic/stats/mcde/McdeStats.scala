@@ -75,6 +75,14 @@ trait McdeStats{
     result
   }
 
+  /**
+   * random
+   * @param m
+   * @param dimensions
+   * @param MC_num
+   * @return
+   */
+
   def contrast_random_ref_dim_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
     // Sanity check
     // require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
@@ -102,44 +110,23 @@ trait McdeStats{
     result
   }
 
-  /**
-    * Compute the contrast of a subspace
-    *
-    * @param m          The indexes from the original data ordered by the rank of the points
-    * @param dimensions The dimensions in the subspace, each value should be smaller than the number of arrays in m
-    * @return The contrast of the subspace (value between 0 and 1)
-    */
+
   def contrast_random_ref_dim(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
     contrast_random_ref_dim_vec(m,dimensions,MC_num).sum/MC_num
   }
 
   def contrast_random_ref_dim_cumulative_average_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
-    // Sanity check
-    // require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
-    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
-    //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
-
-    val result = {
-      if (parallelize == 0) {
-        (1 to MC_num).map(i => {
-          val referenceDim = dimensions.toVector(scala.util.Random.nextInt(dimensions.size))
-          twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
-        }).toVector
-      }
-      else {
-        val iterations = (1 to MC_num).par
-        if (parallelize > 1) {
-          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-        }
-        iterations.map(i => {
-          val referenceDim = dimensions.toVector(scala.util.Random.nextInt(dimensions.size))
-          (i,twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize)))
-        }).toVector.sortBy(_._1).map(x => x._2)
-      }
-    }
-    cumulative_average(result)
+    cumulative_average(contrast_random_ref_dim_vec(m, dimensions, MC_num))
   }
 
+
+  /**
+   * iterate
+   * @param m
+   * @param dimensions
+   * @param MC_num
+   * @return
+   */
 
   def contrast_iterate_ref_dim_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
     // Sanity check
@@ -170,75 +157,46 @@ trait McdeStats{
     result
   }
 
-// dimensions starts from 0
-//  def contrast_iterate_ref_dim(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
-//    contrast_iterate_ref_dim_vec(m, dimensions, MC_num).sum/MC_num
-//  }
-
-
-  def contrast_iterate_ref_dim(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double= {
-    // Sanity check
-    //require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
-    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
-    //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
-    val num_dims = dimensions.size
-    // for example 50 MC iterations with 8 dimensions 50/8*8 = 48
-    val upper_boarder: Int = MC_num/num_dims * num_dims
-
-    val dims_vec = dimensions.toVector
-
-    val result = if (parallelize == 0) {
-      (1 to MC_num).map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
-      }).sum/MC_num
-    } else {
-      val iterations = (1 to MC_num).par
-      if (parallelize > 1) {
-        iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-      }
-      iterations.map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        (i,twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize)))
-      }).toVector.sortBy(_._1).map(x => x._2).sum/MC_num
-    }
-    result
+ //dimensions starts from 0
+  def contrast_iterate_ref_dim(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
+    contrast_iterate_ref_dim_vec(m, dimensions, MC_num).sum/MC_num
   }
 
 
-//  def contrast_iterate_ref_dim_cumulative_average_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
-//    cumulative_average(contrast_iterate_ref_dim_vec(m,dimensions, MC_num))
-//  }
 
   def contrast_iterate_ref_dim_cumulative_average_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
+    cumulative_average(contrast_iterate_ref_dim_vec(m,dimensions, MC_num))
+  }
+
+
+  def contrast_iterate_with_tail_handling(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
     // Sanity check
     //require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
     val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
     //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
     val num_dims = dimensions.size
-    // for example 50 MC iterations with 8 dimensions 50/8*8 = 48
-    val upper_boarder: Int = MC_num/num_dims * num_dims
+    // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
+    val head_great_iteration_num: Int = MC_num/num_dims
+    // 6*8 = 48 small MC iterations
+    val head_MC_number: Int = head_great_iteration_num * num_dims
+    // tail MC number is then 50 - 48 = 2
+    val tail_MC_number: Int = MC_num - tail_MC_number
 
     val dims_vec = dimensions.toVector
+    val head_MC_vec = contrast_iterate_ref_dim_vec(m, dimensions, head_MC_number)
 
-    val result = if (parallelize == 0) {
-      (1 to MC_num).map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
-      }).toVector
-    } else {
-      val iterations = (1 to MC_num).par
-      if (parallelize > 1) {
-        iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-      }
-      iterations.map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        (i,twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize)))
-      }).toVector.sortBy(_._1).map(x => x._2)
-    }
-    cumulative_average(result)
+    val results = (1 until head_great_iteration_num).map(contrast_iterate_ref_dim_vec(m, dimensions, num_dims))
+
   }
 
+
+  /**
+   * iterate & uniform
+   * @param m
+   * @param dimensions
+   * @param MC_num
+   * @return
+   */
 
   def contrast_iterate_uniform_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
     // Sanity check
@@ -269,6 +227,8 @@ trait McdeStats{
     result
   }
 
+
+
   // dimensions starts from 0
   def contrast_iterate_uniform(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
     contrast_iterate_uniform_vec(m, dimensions, MC_num).sum/MC_num
@@ -277,6 +237,55 @@ trait McdeStats{
   def contrast_iterate_uniform_cumulative_average_vec(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
     cumulative_average(contrast_iterate_uniform_vec(m,dimensions, MC_num))
   }
+
+
+  /**
+   * iterate & edouard uniform
+   * @param m
+   * @param dimensions
+   * @param MC_num
+   * @return
+   */
+  def contrast_iterate_uniform_vec_edouard(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
+    // Sanity check
+    //require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
+    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
+    //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
+    val num_dims = dimensions.size
+    // for example 50 MC iterations with 8 dimensions 50/8*8 = 48
+    val upper_boarder: Int = MC_num/num_dims * num_dims
+
+    val dims_vec = dimensions.toVector
+
+    val result = if (parallelize == 0) {
+      (1 to MC_num).map(i => {
+        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
+        twoSample(m, referenceDim, m.slice_with_ref_dim_uniform_edouard(dimensions, referenceDim, sliceSize))
+      }).toVector
+    } else {
+      val iterations = (1 to MC_num).par
+      if (parallelize > 1) {
+        iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
+      }
+      iterations.map(i => {
+        val referenceDim = if (i <= upper_boarder) dims_vec((i-1)%num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
+        (i,twoSample(m, referenceDim, m.slice_with_ref_dim_uniform_edouard(dimensions, referenceDim, sliceSize)))
+      }).toVector.sortBy(_._1).map(x => x._2)
+    }
+    result
+  }
+
+  // dimensions starts from 0
+  def contrast_iterate_uniform_edouard(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
+    contrast_iterate_uniform_vec_edouard(m, dimensions, MC_num).sum/MC_num
+  }
+
+  def contrast_iterate_uniform_cumulative_average_vec_edouard(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Vector[Double] = {
+    cumulative_average(contrast_iterate_uniform_vec_edouard(m,dimensions, MC_num))
+  }
+
+
+
 
 
 

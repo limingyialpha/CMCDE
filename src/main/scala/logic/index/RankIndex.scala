@@ -55,12 +55,32 @@ class RankIndex(val values: Array[Array[Double]]) extends Index {
     for {dim <- dims.filter(_ != ref_dim)} {
       val counter_slice_size = m(0).length-sliceSize
       val counter_sliceStart = scala.util.Random.nextInt((m(0).length).max(1))
-      val to_set_false = (counter_sliceStart until counter_sliceStart + counter_slice_size-1)
-        .map(x => x % m(0).length)
+      val to_set_false = (counter_sliceStart until counter_sliceStart + counter_slice_size-1).map(x => x % m(0).length)
       for {x <- to_set_false} {logicalArray(m(dim)(x)) = false}
     }
     logicalArray
   }
+
+  def slice_with_ref_dim_uniform_edouard(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean] = {
+    val m = this.index
+    val logicalArray = Array.fill[Boolean](m(0).length)(true)
+    for {dim <- dims.filter(_ != ref_dim)} {
+      val flag = scala.util.Random.nextInt(2)
+      if(flag == 1) {
+        val sliceStart = scala.util.Random.nextInt((m(0).length - sliceSize).max(1))
+        for {x <- 0 until sliceStart} {logicalArray(m(dim)(x)) = false}
+        for {x <- sliceStart + sliceSize until m(0).length} {logicalArray(m(dim)(x)) = false}
+      } else {
+        val counterSliceSize = m(0).length-sliceSize // This slice has to be the opposite size (usually smaller)
+        // because we exclude everything that is in it, and we need to exclude the same number of items in both cases.
+        val sliceStart = scala.util.Random.nextInt((m(0).length - counterSliceSize).max(1))
+        for {x <- sliceStart until sliceStart + counterSliceSize} {logicalArray(m(dim)(x)) = false}
+      }
+    }
+    logicalArray
+  }
+
+
 
   def slice_without_ref_dim(dimensions: Set[Int], sliceSize: Int): Array[Boolean] = {
     val m = this.index

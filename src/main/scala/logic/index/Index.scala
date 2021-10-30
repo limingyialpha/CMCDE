@@ -29,34 +29,15 @@ trait Index {
   // return if the index(original data) is empty
   def isEmpty: Boolean = index.length == 0
 
-  /**
-    * Returns an array of booleans specifying the two disjoint sets of the observations for further
-    * statistical tests. True corresponds to the set 1 and false corresponds to the set 2.
-    * The reference dimension is contained in the dimensions.
-    * The array is obtained by performing subspace slicing on the subspace
-    * of dimensions dims/ref_dim with reference dimension ref_dim.
-    * @param dims The set of dimensions of the subspaces
-    * @param ref_dim The dimension that is considered as reference
-    * @param sliceSize The size of the slice for each dimensions, determined by alpha
-    * @return Returns an array of booleans. It specifies the two disjoint sets of the observations
-    * for further statistical tests. True corresponds to the set 1 and false corresponds to the set 2.
-    */
   def slice_with_ref_dim(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean]
+
+  def slice_without_ref_dim(dims: Set[Int], sliceSize: Int): Array[Boolean]
 
   def slice_with_ref_dim_uniform(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean]
 
-  /**
-   * Returns an array of booleans specifying the two disjoint sets of the observations for further
-   * statistical tests. True corresponds to the set 1 and false corresponds to the set 2.
-   * The array is obtained by performing subspace slicing on the subspace of dimensions dims.
-   * The reference dimension is not contained in the dimensions
-   * @param dims The set of dimensions of the subspaces
-   * @param sliceSize The size of the slice for each dimensions, determined by alpha
-   * @return Returns an array of booleans. It specifies the two disjoint sets of the observations
-   * for further statistical tests. True corresponds to the set 1 and false corresponds to the set 2.
-   */
-  def slice_without_ref_dim(dims: Set[Int], sliceSize: Int): Array[Boolean]
-
-
   def slice_without_ref_dim_uniform(dims: Set[Int], sliceSize: Int): Array[Boolean]
+
+  def slice_with_ref_dim_uniform_edouard(dims: Set[Int], ref_dim: Int, sliceSize: Int): Array[Boolean]
+
+  //def slice_without_ref_dim_uniform_edouard(dims: Set[Int], sliceSize: Int): Array[Boolean]
 }

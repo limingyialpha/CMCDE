@@ -4,6 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 
 object Main extends LazyLogging {
   def main(args: Array[String]): Unit = {
-    ContrastApproximationConvergenceSpeed.run()
+    my_vs_edouard_uniform.run()
   }
 }
