@@ -61,14 +61,15 @@ object ContrastApproximationConvergenceSpeed extends Experiment {
     val summary = ExperimentSummary(attributes)
     // dealing with generators
     for {
+      //generator <- generators
       generator <- generators.par
     } {
       // TODO it remains a question if 1000 observations are adequate for all number of dimensions
       val data = generator.generate(observation_num)
       val dim_indices = data(0).indices.toSet
-//      // Save data samples (debugging purpose)
-//      utils.createFolderIfNotExisting(experiment_folder + "/data")
-//      utils.saveDataSet(data, experiment_folder + "/data/" + s"${generator.id}")
+      // Save data samples (debugging purpose)
+      utils.createFolderIfNotExisting(experiment_folder + "/data")
+      utils.saveDataSet(data, experiment_folder + "/data/" + s"${generator.id}")
       val preprocessed = new RankIndex(data)
       for{rep <- 1 to nrep}{
         if(rep % (nrep/10) == 0) {
@@ -84,15 +85,16 @@ object ContrastApproximationConvergenceSpeed extends Experiment {
     }
     // dealing with combined data
     for {
+      //combined_data <- combined_data_points.keys
       combined_data <- (combined_data_points.keys).par
     } {
       // TODO it remains a question if 1000 observations are adequate for all number of dimensions
       val data = combined_data
       val dim_indices = data(0).indices.toSet
       val gen_id = combined_data_points(combined_data)
-//      // Save data samples (debugging purpose)
-//      utils.createFolderIfNotExisting(experiment_folder + "/data")
-//      utils.saveDataSet(data, experiment_folder + "/data/" + s"${gen_id}")
+      // Save data samples (debugging purpose)
+      utils.createFolderIfNotExisting(experiment_folder + "/data")
+      utils.saveDataSet(data, experiment_folder + "/data/" + s"${gen_id}")
       val preprocessed = new RankIndex(data)
       for{rep <- 1 to nrep}{
         if(rep % (nrep/10) == 0) {
