@@ -250,7 +250,7 @@ trait McdeStats{
           twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
         }).sum/head_MC_number
       } else {
-        val iterations = (1 to MC_num).par
+        val iterations = (1 to head_MC_number).par
         if (parallelize > 1) {
           iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
         }
@@ -306,8 +306,6 @@ trait McdeStats{
     val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
 
     val dims_vec = dimensions.toVector
-    println("dims:")
-    println(dims_vec.mkString(","))
 
     val num_dims = dimensions.size
 
@@ -325,7 +323,7 @@ trait McdeStats{
           twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
         }).toVector
       } else {
-        val iterations = (1 to MC_num).par
+        val iterations = (1 to head_MC_number).par
         if (parallelize > 1) {
           iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
         }
@@ -337,7 +335,6 @@ trait McdeStats{
     } else Vector(0.0) // a dumb variable that will never be used
 
     val head_contrast = if (head_MC_number >= 1) head_influence_vec.sum/head_MC_number else 0
-    println(f"head contrast is: ${head_contrast}")
 
     val tail_contrast= if (tail_MC_number >= 1) {
 
@@ -351,8 +348,6 @@ trait McdeStats{
           selected_vec.sum
         }).zip(dims_vec).sortBy(x => x._1).map(x=> x._2).toVector
       }
-      println("sorted_dims:")
-      println(sorted_dims_vec.mkString(","))
 
       // for example, 7 iterations left, 100 dimensions, then we have
       // (15,15,14,14,14,14,14), 7 nearly equal size bins
@@ -384,7 +379,6 @@ trait McdeStats{
         }).sum
       }
     } else 0
-    println(f"tail contrast is: ${tail_contrast}")
 
     val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number)/ MC_num
     contrast
