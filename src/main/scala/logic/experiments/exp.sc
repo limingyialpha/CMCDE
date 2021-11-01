@@ -5,7 +5,21 @@
 //  val selected_vec = vec.filter(x => x._2 % size == i-1).map(x => x._1)
 //  selected_vec.sum
 //}).zipWithIndex.sortBy(x => x._1).map(x=> x._2)
-//
+
+def sum_slices(vec: Vector[Double], dims_vec: Vector[Int]): Vector[Int] = {
+  val zipped = vec.zipWithIndex
+  val num_dims = dims_vec.size
+  (0 until num_dims).map(i =>{
+    val selected_vec = zipped.filter(x => x._2 % num_dims == i).map(x => x._1)
+    selected_vec.sum
+    //zip with
+  }).zip(dims_vec).sortBy(x => x._1).map(x=> x._2).toVector
+}
+
+val vec = Vector(1.0,2,5,5,3,3,5,5,6)
+val dims_vec = Vector(4,3,7)
+sum_slices(vec, dims_vec)
+
 //
 //val dims = 29
 //val iterations = 4
@@ -18,14 +32,14 @@
 //cumulative_sum(vector)
 //vector.slice(0,7)
 
-import logic.data.Utility.cumulative_sum
-
-def get_tail_bins(num_dims: Int, tail_MC_num: Int): Vector[Int]={
-  (0 until tail_MC_num).map(x => {
-    val overflow = if (x < num_dims % tail_MC_num) 1 else 0
-    (overflow + num_dims/tail_MC_num)
-  }).toVector
-}
-
-val bins = get_tail_bins(100,7)
-cumulative_sum(bins)
+//import logic.data.Utility.cumulative_sum
+//
+//def get_tail_bins(num_dims: Int, tail_MC_num: Int): Vector[Int]={
+//  (0 until tail_MC_num).map(x => {
+//    val overflow = if (x < num_dims % tail_MC_num) 1 else 0
+//    (overflow + num_dims/tail_MC_num)
+//  }).toVector
+//}
+//
+//val bins = get_tail_bins(100,7)
+//cumulative_sum(bins)

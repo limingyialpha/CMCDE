@@ -78,9 +78,9 @@ object ContrastApproximationConvergenceSpeed extends Experiment {
         val random_array = ksp.contrast_random_ref_dim_cumulative_average_vec(preprocessed, dim_indices, MC_num = MC_num)
         val random_to_write = (List(generator.id,"random",rep) ++ random_array).mkString(",")
         summary.direct_write(summaryPath, random_to_write)
-        val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_to_write)
+        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+        //val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
+        //summary.direct_write(summaryPath,iterate_to_write)
       }
     }
     // dealing with combined data
@@ -103,9 +103,9 @@ object ContrastApproximationConvergenceSpeed extends Experiment {
         val random_array = ksp.contrast_random_ref_dim_cumulative_average_vec(preprocessed, dim_indices, MC_num = MC_num)
         val random_to_write = (List(gen_id,"random",rep) ++ random_array).mkString(",")
         summary.direct_write(summaryPath, random_to_write)
-        val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_to_write)
+        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+        //val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
+        //summary.direct_write(summaryPath,iterate_to_write)
       }
     }
   }

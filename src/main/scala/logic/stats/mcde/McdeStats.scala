@@ -261,19 +261,130 @@ trait McdeStats{
       }
     } else 0
 
-    // for example, 7 iterations left, 100 dimensions, then we have
-    // (15,15,14,14,14,14,14), 7 nearly equal size bins
-    val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
-    //(15, 30, 44, 58, 72, 86, 100)
-    val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
+    val tail_contrast= if (tail_MC_number >= 1) {
 
-    val tail_contrast= (0 until tail_MC_number).map(x=>{
-      val current_bin_size = tail_bins_sizes(x)
-      // crucial
-      val dims_in_the_bin = dims_vec.slice(tail_bins_start_index(x)-current_bin_size,tail_bins_start_index(x))
-      val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-      twoSample(m, ref_dim, m.slice_with_ref_dim(dimensions, ref_dim, sliceSize)) * (current_bin_size/ num_dims)
-    }).sum * tail_MC_number/MC_num
+      // for example, 7 iterations left, 100 dimensions, then we have
+      // (15,15,14,14,14,14,14), 7 nearly equal size bins
+      val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
+
+      //(15, 30, 44, 58, 72, 86, 100)
+      val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
+
+      if (parallelize == 0) {
+        (0 until tail_MC_number).map(x=>{
+          val current_bin_size = tail_bins_sizes(x)
+          // crucial
+          val dims_in_the_bin = dims_vec.slice(tail_bins_start_index(x)-current_bin_size,tail_bins_start_index(x))
+          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
+          // do not forget current_bin_size.toDouble!!!
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dimensions, ref_dim, sliceSize)) * (current_bin_size.toDouble/ num_dims)
+        }).sum
+      } else {
+        val iterations = (0 until tail_MC_number).par
+        if (parallelize > 1) {
+          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
+        }
+        iterations.map(x=>{
+          val current_bin_size = tail_bins_sizes(x)
+          // crucial
+          val dims_in_the_bin = dims_vec.slice(tail_bins_start_index(x)-current_bin_size,tail_bins_start_index(x))
+          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dimensions, ref_dim, sliceSize)) * (current_bin_size.toDouble/ num_dims)
+        }).sum
+      }
+    } else 0
+
+    val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number)/ MC_num
+    contrast
+  }
+
+
+  /**
+   * iterate tail random ref dim grouping
+   */
+  def contrast_iterate_ref_dim_tail_ref_dim_grouping_by_influence(m: PreprocessedData, dimensions: Set[Int], MC_num:Int = M): Double = {
+    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
+
+    val dims_vec = dimensions.toVector
+    println("dims:")
+    println(dims_vec.mkString(","))
+
+    val num_dims = dimensions.size
+
+    // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
+    val head_great_iteration_num: Int = MC_num/num_dims
+    // 6*8 = 48 small MC iterations
+    val head_MC_number: Int = head_great_iteration_num * num_dims
+    // tail MC number is then 50 - 48 = 2
+    val tail_MC_number: Int = MC_num - head_MC_number
+
+    val head_influence_vec: Vector[Double] = if (head_MC_number >= 1) {
+      if (parallelize == 0) {
+        (1 to head_MC_number).map(i => {
+          val referenceDim = dims_vec((i-1)%num_dims)
+          twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
+        }).toVector
+      } else {
+        val iterations = (1 to MC_num).par
+        if (parallelize > 1) {
+          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
+        }
+        iterations.map(i => {
+          val referenceDim = dims_vec((i-1)%num_dims)
+          twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize))
+        }).toVector
+      }
+    } else Vector(0.0) // a dumb variable that will never be used
+
+    val head_contrast = if (head_MC_number >= 1) head_influence_vec.sum/head_MC_number else 0
+    println(f"head contrast is: ${head_contrast}")
+
+    val tail_contrast= if (tail_MC_number >= 1) {
+
+      // if head_number = 0 => we have not got information about the influences from each dimension
+      // we simply use dims_vec else, we can analyze the influence vector from the previous iterations
+      // and sort the dim vec by their sum of influences
+      val sorted_dims_vec = if (head_MC_number == 0) dims_vec else {
+        val zipped = head_influence_vec.zipWithIndex
+        (0 until num_dims).map(i =>{
+          val selected_vec = zipped.filter(x => x._2 % num_dims == i).map(x => x._1)
+          selected_vec.sum
+        }).zip(dims_vec).sortBy(x => x._1).map(x=> x._2).toVector
+      }
+      println("sorted_dims:")
+      println(sorted_dims_vec.mkString(","))
+
+      // for example, 7 iterations left, 100 dimensions, then we have
+      // (15,15,14,14,14,14,14), 7 nearly equal size bins
+      val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
+
+      //(15, 30, 44, 58, 72, 86, 100)
+      val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
+
+      if (parallelize == 0) {
+        (0 until tail_MC_number).map(x=>{
+          val current_bin_size = tail_bins_sizes(x)
+          // crucial
+          val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x)-current_bin_size,tail_bins_start_index(x))
+          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
+          // do not forget current_bin_size.toDouble!!!
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dimensions, ref_dim, sliceSize)) * (current_bin_size.toDouble/ num_dims)
+        }).sum
+      } else {
+        val iterations = (0 until tail_MC_number).par
+        if (parallelize > 1) {
+          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
+        }
+        iterations.map(x=>{
+          val current_bin_size = tail_bins_sizes(x)
+          // crucial
+          val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x)-current_bin_size,tail_bins_start_index(x))
+          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dimensions, ref_dim, sliceSize)) * (current_bin_size.toDouble/ num_dims)
+        }).sum
+      }
+    } else 0
+    println(f"tail contrast is: ${tail_contrast}")
 
     val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number)/ MC_num
     contrast

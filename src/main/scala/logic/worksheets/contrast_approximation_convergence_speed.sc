@@ -1,3 +1,0 @@
-import logic.experiments.ContrastApproximationConvergenceSpeed
-
-ContrastApproximationConvergenceSpeed.run()

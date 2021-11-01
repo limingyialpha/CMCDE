@@ -77,9 +77,9 @@ object iterate_vs_uniform_iterate_conv_speed extends Experiment {
         if(rep % (nrep/10) == 0) {
           info(s"Generator id: ${generator.id}, Reached rep = $rep")
         }
-        val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_to_write)
+        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+        //val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
+        //summary.direct_write(summaryPath,iterate_to_write)
         val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
         val iterate_uniform_to_write = (List(generator.id,"iterate_uniform",rep) ++ iterate_uniform_array).mkString(",")
         summary.direct_write(summaryPath,iterate_uniform_to_write)
@@ -103,9 +103,9 @@ object iterate_vs_uniform_iterate_conv_speed extends Experiment {
         if(rep % (nrep/10) == 0) {
           info(s"Generator id: ${gen_id}, Reached rep = $rep")
         }
-        val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_to_write)
+        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+        //val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
+        //summary.direct_write(summaryPath,iterate_to_write)
         val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
         val iterate_uniform_to_write = (List(gen_id,"iterate_uniform",rep) ++ iterate_uniform_array).mkString(",")
         summary.direct_write(summaryPath,iterate_uniform_to_write)
