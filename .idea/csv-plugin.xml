@@ -24,6 +24,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\experiments\2021-11-01-15-30_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
