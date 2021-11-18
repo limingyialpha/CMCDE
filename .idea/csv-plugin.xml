@@ -31,6 +31,76 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\experiments\2021-11-05-12-52_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-05-12-56_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-16-18-06_EstimatorsPowerCompare_\EstimatorsPowerCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-16-18-16_EstimatorsPowerCompare_\EstimatorsPowerCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-16-18-17_EstimatorsPowerCompare_\EstimatorsPowerCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-16-18-20_EstimatorsPowerCompare_\EstimatorsPowerCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-16-18-28_EstimatorsPowerCompare_\EstimatorsPowerCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-17-16-28_EstimatorsPowerCompareAsymmetric_\EstimatorsPowerCompareAsymmetric.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-17-18-23_SliceTechniquesPowerCompareSymmetric_\SliceTechniquesPowerCompareSymmetric.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-18-10-21_SliceTechniquesPowerCompareAsymmetric_\SliceTechniquesPowerCompareAsymmetric.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

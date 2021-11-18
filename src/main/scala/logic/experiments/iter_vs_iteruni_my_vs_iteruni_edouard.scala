@@ -43,65 +43,65 @@ object iter_vs_iteruni_my_vs_iteruni_edouard extends Experiment {
   val MC_num = 2000
 
   def run():Unit = {
-    info(s"Starting experiments")
-    val attributes = List("genId", "technique", "rep") ++ (1 to MC_num).map(x => x.toString).toList
-    val summary = ExperimentSummary(attributes)
-    // dealing with generators
-    for {
-      // 1. generator <- generators
-      generator <- generators.par
-    } {
-      // TODO it remains a question if 1000 observations are adequate for all number of dimensions
-      val data = generator.generate(observation_num)
-      val dim_indices = data(0).indices.toSet
-      // Save data samples (debugging purpose)
-      // 2. do not save data
-      utils.createFolderIfNotExisting(experiment_folder + "/data")
-      utils.saveDataSet(data, experiment_folder + "/data/" + s"${generator.id}")
-      val preprocessed = new RankIndex(data)
-      for{rep <- 1 to nrep}{
-        if(rep % (nrep/10) == 0) {
-          info(s"Generator id: ${generator.id}, Reached rep = $rep")
-        }
-        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        //val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
-        //summary.direct_write(summaryPath,iterate_to_write)
-        val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
-        val iterate_uniform_to_write = (List(generator.id,"iterate_uniform_my",rep) ++ iterate_uniform_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_uniform_to_write)
-        val iterate_uniform_edouard_array = ksp.contrast_iterate_uniform_cumulative_average_vec_edouard(preprocessed, dim_indices,MC_num)
-        val iterate_uniform_edouard_to_write = (List(generator.id,"iterate_uniform_edouard",rep) ++ iterate_uniform_edouard_array).mkString(",")
-        summary.direct_write(summaryPath, iterate_uniform_edouard_to_write)
-      }
-    }
-    // dealing with combined data
-    for {
-      combined_data <- (combined_data_points.keys).par
-      //combined_data <- combined_data_points.keys
-    } {
-      // TODO it remains a question if 1000 observations are adequate for all number of dimensions
-      val data = combined_data
-      val dim_indices = data(0).indices.toSet
-      val gen_id = combined_data_points(combined_data)
-      // Save data samples (debugging purpose)
-      // 2. do not save data
-      utils.createFolderIfNotExisting(experiment_folder + "/data")
-      utils.saveDataSet(data, experiment_folder + "/data/" + s"${gen_id}")
-      val preprocessed = new RankIndex(data)
-      for{rep <- 1 to nrep}{
-        if(rep % (nrep/10) == 0) {
-          info(s"Generator id: ${gen_id}, Reached rep = $rep")
-        }
-        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
-        //val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
-        //summary.direct_write(summaryPath,iterate_to_write)
-        val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
-        val iterate_uniform_to_write = (List(gen_id,"iterate_uniform_my",rep) ++ iterate_uniform_array).mkString(",")
-        summary.direct_write(summaryPath,iterate_uniform_to_write)
-        val iterate_uniform_edouard_array = ksp.contrast_iterate_uniform_cumulative_average_vec_edouard(preprocessed, dim_indices,MC_num)
-        val iterate_uniform_edouard_to_write = (List(gen_id,"iterate_uniform_edouard",rep) ++ iterate_uniform_edouard_array).mkString(",")
-        summary.direct_write(summaryPath, iterate_uniform_edouard_to_write)
-      }
-    }
+//    info(s"Starting experiments")
+//    val attributes = List("genId", "technique", "rep") ++ (1 to MC_num).map(x => x.toString).toList
+//    val summary = ExperimentSummary(attributes)
+//    // dealing with generators
+//    for {
+//      // 1. generator <- generators
+//      generator <- generators.par
+//    } {
+//      // TODO it remains a question if 1000 observations are adequate for all number of dimensions
+//      val data = generator.generate(observation_num)
+//      val dim_indices = data(0).indices.toSet
+//      // Save data samples (debugging purpose)
+//      // 2. do not save data
+//      utils.createFolderIfNotExisting(experiment_folder + "/data")
+//      utils.saveDataSet(data, experiment_folder + "/data/" + s"${generator.id}")
+//      val preprocessed = new RankIndex(data)
+//      for{rep <- 1 to nrep}{
+//        if(rep % (nrep/10) == 0) {
+//          info(s"Generator id: ${generator.id}, Reached rep = $rep")
+//        }
+//        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+//        //val iterate_to_write = (List(generator.id,"iterate",rep) ++ iterate_array).mkString(",")
+//        //summary.direct_write(summaryPath,iterate_to_write)
+//        val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
+//        val iterate_uniform_to_write = (List(generator.id,"iterate_uniform_my",rep) ++ iterate_uniform_array).mkString(",")
+//        summary.direct_write(summaryPath,iterate_uniform_to_write)
+//        val iterate_uniform_edouard_array = ksp.contrast_iterate_uniform_cumulative_average_vec_edouard(preprocessed, dim_indices,MC_num)
+//        val iterate_uniform_edouard_to_write = (List(generator.id,"iterate_uniform_edouard",rep) ++ iterate_uniform_edouard_array).mkString(",")
+//        summary.direct_write(summaryPath, iterate_uniform_edouard_to_write)
+//      }
+//    }
+//    // dealing with combined data
+//    for {
+//      combined_data <- (combined_data_points.keys).par
+//      //combined_data <- combined_data_points.keys
+//    } {
+//      // TODO it remains a question if 1000 observations are adequate for all number of dimensions
+//      val data = combined_data
+//      val dim_indices = data(0).indices.toSet
+//      val gen_id = combined_data_points(combined_data)
+//      // Save data samples (debugging purpose)
+//      // 2. do not save data
+//      utils.createFolderIfNotExisting(experiment_folder + "/data")
+//      utils.saveDataSet(data, experiment_folder + "/data/" + s"${gen_id}")
+//      val preprocessed = new RankIndex(data)
+//      for{rep <- 1 to nrep}{
+//        if(rep % (nrep/10) == 0) {
+//          info(s"Generator id: ${gen_id}, Reached rep = $rep")
+//        }
+//        //val iterate_array = ksp.contrast_iterate_ref_dim_cumulative_average_vec(preprocessed,dim_indices, MC_num = MC_num)
+//        //val iterate_to_write = (List(gen_id,"iterate",rep) ++ iterate_array).mkString(",")
+//        //summary.direct_write(summaryPath,iterate_to_write)
+//        val iterate_uniform_array = ksp.contrast_iterate_uniform_cumulative_average_vec(preprocessed,dim_indices,MC_num)
+//        val iterate_uniform_to_write = (List(gen_id,"iterate_uniform_my",rep) ++ iterate_uniform_array).mkString(",")
+//        summary.direct_write(summaryPath,iterate_uniform_to_write)
+//        val iterate_uniform_edouard_array = ksp.contrast_iterate_uniform_cumulative_average_vec_edouard(preprocessed, dim_indices,MC_num)
+//        val iterate_uniform_edouard_to_write = (List(gen_id,"iterate_uniform_edouard",rep) ++ iterate_uniform_edouard_array).mkString(",")
+//        summary.direct_write(summaryPath, iterate_uniform_edouard_to_write)
+//      }
+//    }
   }
 }

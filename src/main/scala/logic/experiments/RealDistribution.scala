@@ -46,7 +46,7 @@ object RealDistribution extends Experiment {
         val data = generator.generate(num_obs)
         val dim_indices = data(0).indices.toSet
         val preprocessed = new RankIndex(data)
-        val contrast = ksp.contrast_random_ref_dim(preprocessed,dim_indices,MC_num)
+        val contrast = ksp.contrast_random_ref_dim(preprocessed,dim_indices,MC_num)("c")
         summary.add("genID", generator.id)
         summary.add("rep",rep)
         summary.add("contrast", contrast)

@@ -18,7 +18,6 @@ case class IndependentLinearRandomStripe(nDim: Int, noise: Double, noisetype: St
     val flags = Random.shuffle((0 until nDim).toList).map(d => {
       if (d < ld) true else false
     })
-    println(flags.mkString(","))
     (1 to n).toArray.map { i => {
       val x = Uniform(0, 1).draw()
       (0 until nDim).toArray.map(d => {

@@ -1,7 +1,6 @@
 package logic.experiments
 
 import io.github.edouardfouche.generators.{DataGenerator, Independent, Linear}
-import logic.experiments.ContrastApproximationConvergenceSpeed.{alpha, experiment_folder, generators, info, ksp, nrep, summaryPath}
 import logic.index.RankIndex
 import logic.stats.mcde.KSP
 
@@ -53,9 +52,9 @@ object ProvePaperWrong extends Experiment {
         val data = generator.generate(num_obs)
         val dim_indices = data(0).indices.toSet
         val preprocessed = new RankIndex(data)
-        val mc_vec = ksp.contrast_random_ref_dim_vec(preprocessed,dim_indices,MC_num)
-        val to_write = (List(generator.id,rep) ++ mc_vec).mkString(",")
-        summary.direct_write(summaryPath, to_write)
+//        val mc_vec = ksp.contrast_random_ref_dim_vec(preprocessed,dim_indices,MC_num)
+//        val to_write = (List(generator.id,rep) ++ mc_vec).mkString(",")
+//        summary.direct_write(summaryPath, to_write)
       }
     }
   }
