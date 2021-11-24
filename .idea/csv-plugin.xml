@@ -101,6 +101,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\experiments\2021-11-18-16-05_SliceTechniquesPowerCompareSymmetric_\SliceTechniquesPowerCompareSymmetric.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-18-16-06_SliceTechniquesPowerCompareSymmetric_\SliceTechniquesPowerCompareSymmetricSparse.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

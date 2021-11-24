@@ -7,8 +7,8 @@ import logic.index.RankIndex
 import logic.stats.mcde.KSP
 
 object SliceTechniquesPowerCompareSymmetric extends Experiment {
-//  val dimensions_of_interest = Vector(2,3,5,10,20)
-  val dimensions_of_interest = Vector(50,100)
+  val dimensions_of_interest = Vector(2,3,5,10,20)
+  //val dimensions_of_interest = Vector(50,100)
   val noise_levels = 30
   val noises = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
 
@@ -17,7 +17,7 @@ object SliceTechniquesPowerCompareSymmetric extends Experiment {
 
   val slice_techniques = Vector("c", "su", "u")
   val MC_num = 50
-  val obs_num = 1000
+  val obs_num = 100
 
   val independent_benchmark_iteration_num = 1000
 

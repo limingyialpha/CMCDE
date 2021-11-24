@@ -45,8 +45,6 @@ object EstimatorsPowerCompareSymmetric extends Experiment {
     info(s"number of MC iterations: ${MC_num}")
     info(s"number of independent benchmark repetitions: ${independent_benchmark_iteration_num}")
     info(s"number of repetitions for comparison: ${comparison_iteration_num}")
-    info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
-
     val attributes = List("genId", "dim", "noise", "estimator", "power")
     val summary = ExperimentSummary(attributes)
     for (estimator <- estimators) {
