@@ -4,7 +4,12 @@ import breeze.stats.distributions.Uniform
 import scala.util.Random
 import io.github.edouardfouche.generators.ParameterizedDataGenerator
 
+/**
+ * This generator generates data in a stripe fashion.
+ * some random dimensions are independent, some are linear
+ */
 case class IndependentLinearRandomStripe(nDim: Int, noise: Double, noisetype: String, discretize: Int)(linear_dim: Option[Double] = Some(nDim/2)) extends ParameterizedDataGenerator {
+  override lazy val shortname = "ilrs"
   val ld: Int = linear_dim match {
     case Some(i) => i.asInstanceOf[Int]
     case None => nDim/2

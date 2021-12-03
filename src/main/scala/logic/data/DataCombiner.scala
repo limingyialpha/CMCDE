@@ -2,6 +2,9 @@ package logic.data
 
 import io.github.edouardfouche.generators.GeneratorFactory
 
+/**
+ * Generate data via DataGenerator and combine them together into one matrix
+ */
 object DataCombiner {
   def generate_combine(n:Int,
                        name1:String, dim1:Int, noise1:Double,

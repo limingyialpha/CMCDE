@@ -1,8 +1,12 @@
 package logic.data
 
+import breeze.linalg.DenseMatrix
+
 import scala.collection.immutable._
 
-
+/**
+ * Provide utilities for number, vector, matrix computation or manipulation
+ */
 object Utility {
 
   def cumulative_average(vec: Vector[Double]): Vector[Double]={
@@ -13,20 +17,17 @@ object Utility {
     vec.scanLeft(0)(_+_).drop(1)
   }
 
-  def mean(xs: Seq[Double]): Option[Double] =
-    if (xs.isEmpty) None
-    else Some(xs.sum / xs.length)
-
-  def variance(xs: Seq[Double]): Option[Double] = {
-    mean(xs).flatMap(m => mean(xs.map(x => Math.pow(x-m, 2))))
-  }
-
-  def empirical_variance(xs: Seq[Double]): Double = {
-    mean(xs).flatMap(m => mean(xs.map(x => Math.pow(x-m, 2)))).get * xs.length / (xs.length - 1)
-  }
-
   // round(3.25235252, 2) ->  3.25
   def round(v: Double, digits: Int): Double = {
     scala.math.round(v * scala.math.pow(10, digits)).toDouble / scala.math.pow(10, digits)
+  }
+
+  def get_submtx(mtx: Array[Array[Double]], set_dims: Set[Int]): Array[Array[Double]] = {
+    mtx.map(row => row.zipWithIndex.filter(ele => set_dims.contains(ele._2)).map(ele => ele._1))
+  }
+
+  def get_submtx_as_densemtx(mtx: Array[Array[Double]], set_dims: Set[Int]): DenseMatrix[Double] = {
+    val submtx = mtx.map(row => row.zipWithIndex.filter(ele => set_dims.contains(ele._2)).map(ele => ele._1))
+    DenseMatrix(submtx: _*)
   }
 }

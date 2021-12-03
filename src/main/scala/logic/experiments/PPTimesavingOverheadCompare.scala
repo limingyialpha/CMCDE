@@ -1,7 +1,7 @@
 package logic.experiments
 
 import io.github.edouardfouche.generators.{DataGenerator, Independent, Linear}
-import logic.generators.{IndependentLinearRandomStripe, IndependentLinearStripe}
+import logic.generators.IndependentLinearStripe
 import logic.index.RankIndex
 import logic.stats.mcde.KSP
 import logic.utils.StopWatch
@@ -17,12 +17,12 @@ object PPTimesavingOverheadCompare extends Experiment {
   val alpha = 0.5
   val observation_num = 1000
   val generators: Vector[DataGenerator] = Vector(
-    Independent(10,0,"gaussian", 0),
-    Independent(30,0,"gaussian", 0),
-    Linear(10,0.4,"gaussian",0),
-    Linear(30,0.4,"gaussian",0),
-    IndependentLinearStripe(10,0.2,"gaussian",0),
-    IndependentLinearStripe(30,0.2,"gaussian",0)
+    Independent(10, 0, "gaussian", 0),
+    Independent(30, 0, "gaussian", 0),
+    Linear(10, 0.4, "gaussian", 0),
+    Linear(30, 0.4, "gaussian", 0),
+    IndependentLinearStripe(10, 0.2, "gaussian", 0),
+    IndependentLinearStripe(30, 0.2, "gaussian", 0)
   )
   val MC_num_upper = 20
 
@@ -46,7 +46,7 @@ object PPTimesavingOverheadCompare extends Experiment {
           for {rep <- nrep_it} {
             val MC_it = if (MC_PP) (1 to MC_num_upper).par else (1 to MC_num_upper)
             for {mc <- MC_it}
-            ksp.contrast(preprocessed, dims, mc)("ItR", "c")
+              ksp.contrast(preprocessed, dims, mc)("ItR", "c")
           }
         }
       })
@@ -56,39 +56,39 @@ object PPTimesavingOverheadCompare extends Experiment {
     }
 
     // all true
-    measure_time(true,true,true, true)
+    measure_time(true, true, true, true)
 
     // 3 true
-    measure_time(true,true,true, false)
-    measure_time(true,false,true, true)
-    measure_time(true,true,false, true)
-    measure_time(false, true, true,true)
+    measure_time(true, true, true, false)
+    measure_time(true, false, true, true)
+    measure_time(true, true, false, true)
+    measure_time(false, true, true, true)
 
     // 2 true
-    measure_time(true,true,false, false)
-    measure_time(false,true,true, false)
-    measure_time(false,false,true, true)
-    measure_time(false,true,false, true)
-    measure_time(true,false,true, false)
-    measure_time(true,false,false, true)
+    measure_time(true, true, false, false)
+    measure_time(false, true, true, false)
+    measure_time(false, false, true, true)
+    measure_time(false, true, false, true)
+    measure_time(true, false, true, false)
+    measure_time(true, false, false, true)
 
 
     // second run
     // all true
-    measure_time(true,true,true, true)
+    measure_time(true, true, true, true)
 
     // 3 true
-    measure_time(true,true,true, false)
-    measure_time(true,false,true, true)
-    measure_time(true,true,false, true)
-    measure_time(false, true, true,true)
+    measure_time(true, true, true, false)
+    measure_time(true, false, true, true)
+    measure_time(true, true, false, true)
+    measure_time(false, true, true, true)
 
     // 2 true
-    measure_time(true,true,false, false)
-    measure_time(false,true,true, false)
-    measure_time(false,false,true, true)
-    measure_time(false,true,false, true)
-    measure_time(true,false,true, false)
-    measure_time(true,false,false, true)
+    measure_time(true, true, false, false)
+    measure_time(false, true, true, false)
+    measure_time(false, false, true, true)
+    measure_time(false, true, false, true)
+    measure_time(true, false, true, false)
+    measure_time(true, false, false, true)
   }
 }
