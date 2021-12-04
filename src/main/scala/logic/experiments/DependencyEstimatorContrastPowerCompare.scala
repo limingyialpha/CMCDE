@@ -29,16 +29,16 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
   )
   val dimensions_of_interest = Vector(2, 3, 4, 8, 12, 16)
   val noise_levels = 30
-  val noises: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
-  val MC_num = 50
+  val iteration_num = 50
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
-  val slice_technique = "c"// we believe center slice is the best
+  val slice_technique = "c" // we believe center slice is the best
   val estimators_of_interest: Array[String] = Array("R", "ItGR", "ItGI", "ItGIBEV")
-  val gmcde: GMCDE = GMCDE(parallelize, MC_num)
+  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
   val power_computation_iteration_num = 500
@@ -49,13 +49,13 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
     info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
-    info(s"dimension of interest: ${dimensions_of_interest mkString ","}")
-    info(s"noise_levels: $noise_levels")
+    info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
+    info(s"noise levels: $noise_levels")
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
-    info(s"GMCDE specific params:")
+    info(s"Dependency measure specific params:")
     info(s"Dependency measure: GMCDE")
-    info(s"number of MC iterations: $MC_num")
+    info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
     info(s"slice technique: $slice_technique")
@@ -86,7 +86,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
           val threshold99 = percentile(independent_benchmark_contrasts, 0.99)
           info(s"finished computing thresholds for estimator $estimator, observation number: $obs_num, dimension: $dim")
 
-          for (noise <- noises.par) {
+          for (noise <- noises_of_interest.par) {
             info(s"now dealing with gens: symmetric, estimator $estimator, observation number: $obs_num, dimension: $dim, noise $noise")
             // symmetric case
             for (gen <- generators.par) {

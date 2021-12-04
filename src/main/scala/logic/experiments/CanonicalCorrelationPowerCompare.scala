@@ -12,7 +12,7 @@ import logic.gmcde.GMCDE
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric/asymmetric data distributions of all kinds
  */
-object CanonicalContrastPowerCompare extends Experiment {
+object CanonicalCorrelationPowerCompare extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
@@ -30,16 +30,16 @@ object CanonicalContrastPowerCompare extends Experiment {
   )
   val dimensions_of_interest = Vector(4, 8, 12, 16)
   val noise_levels = 30
-  val noises: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
-  val MC_num = 50
+  val iteration_num = 50
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, MC_num)
+  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology specific params
   val power_computation_iteration_num = 500
@@ -50,13 +50,13 @@ object CanonicalContrastPowerCompare extends Experiment {
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
     info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
-    info(s"dimension of interest: ${dimensions_of_interest mkString ","}")
-    info(s"noise_levels: $noise_levels")
+    info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
+    info(s"noise levels: $noise_levels")
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
-    info(s"GMCDE specific params:")
+    info(s"Dependency measure specific params:")
     info(s"Canonical Correlation measure: GMCDE")
-    info(s"number of MC iterations: $MC_num")
+    info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
     info(s"slice technique: $slice_technique")
@@ -87,7 +87,7 @@ object CanonicalContrastPowerCompare extends Experiment {
         val threshold99 = percentile(independent_benchmark_canonical_contrasts, 0.99)
         info(s"finished computing thresholds for measure: GMCDE, observation number: $obs_num, dimension: $dim")
 
-        for (noise <- noises.par) {
+        for (noise <- noises_of_interest.par) {
           info(s"now dealing with gens: symmetric, measure: GMCDE, observation number: $obs_num, dimension: $dim, noise $noise")
           // symmetric case
           for (gen <- generators.par) {

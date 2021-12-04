@@ -31,6 +31,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\experiments\2021-11-01-21-40_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-05-12-47_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\experiments\2021-11-05-12-52_TailHandlingCompare_\TailHandlingCompare.csv">
           <value>
             <Attribute>
@@ -39,6 +53,20 @@
           </value>
         </entry>
         <entry key="\experiments\2021-11-05-12-56_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-14-13-54_TailHandlingCompare_\TailHandlingCompare.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\experiments\2021-11-15-17-36_HeadTailBalanceTest_\HeadTailBalanceTest.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
