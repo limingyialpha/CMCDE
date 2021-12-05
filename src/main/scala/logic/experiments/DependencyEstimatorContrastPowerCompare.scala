@@ -66,7 +66,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "dim", "noise", "obs_num", "estimator", "avg_cc", "std_cc", "power90", "power95",
+    val attributes = List("genId", "type", "dim", "noise", "obs_num", "estimator", "avg_cc", "std_cc", "power90", "power95",
       "power99")
     val summary = ExperimentSummary(attributes)
 
@@ -101,7 +101,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
               val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
               val avg_cc = mean(comparison_contrasts)
               val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id, dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              val to_write = List(generator_instance.id, "sy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
             // asymmetric case
@@ -120,7 +120,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
               val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
               val avg_cc = mean(comparison_contrasts)
               val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id + "_asy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              val to_write = List(generator_instance.id, "asy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
           }
