@@ -30,16 +30,18 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
   )
   val dimensions_of_interest = Vector(2, 3, 4, 8, 12, 16)
   val noise_levels = 30
-  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
   val iteration_num = 50
-  val parallelize = 1
+  //parallelize = 0 or 1??? Fork join pool causing problem???
+  val parallelize = 0
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_techniques_of_interest = Vector("c", "su", "u")
   val estimator = "R" // The original implementation in MCDE uses R as slice technique
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
+
 
   // methodology params
   val power_computation_iteration_num = 500
@@ -80,22 +82,22 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
           val independent_benchmark_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
             val data = independent_benchmark_instance.generate(obs_num)
             val dims = (0 until dim).toSet
-            gmcde.contrast(data, dims)(estimator, slice_technique)
+            measure.contrast(data, dims)(estimator, slice_technique)
           }).toVector
           val threshold90 = percentile(independent_benchmark_contrasts, 0.90)
           val threshold95 = percentile(independent_benchmark_contrasts, 0.95)
           val threshold99 = percentile(independent_benchmark_contrasts, 0.99)
           info(s"finished computing thresholds for slice technique $slice_technique, observation number: $obs_num, dimension: $dim")
 
-          for (noise <- noises_of_interest.par) {
+          for (noise <- noises_of_interest) {
             info(s"now dealing with gens: symmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
             // symmetric case
-            for (gen <- generators.par) {
+            for (gen <- generators) {
               val generator_instance = gen(dim, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
                 val data = generator_instance.generate(obs_num)
                 val dims = (0 until dim).toSet
-                gmcde.contrast(data, dims)(estimator, slice_technique)
+                measure.contrast(data, dims)(estimator, slice_technique)
               }).toVector
               val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
               val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
@@ -107,14 +109,14 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
             }
             // asymmetric case
             info(s"now dealing with gens: asymmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
-            for (gen <- generators.par) {
+            for (gen <- generators) {
               val generator_instance = gen(dim / 2, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
                 val data_sy = generator_instance.generate(obs_num)
                 val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(obs_num)
                 val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
                 val dims = (0 until dim).toSet
-                gmcde.contrast(data, dims)(estimator, slice_technique)
+                measure.contrast(data, dims)(estimator, slice_technique)
               }).toVector
               val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
               val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
