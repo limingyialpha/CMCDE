@@ -1,10 +1,11 @@
-package logic.experiments
+package logic.experiments.power
 
 import breeze.stats.DescriptiveStats.percentile
-import breeze.stats.{mean, stddev}
 import io.github.edouardfouche.generators._
 import logic.data.Utility.round
+import logic.experiments.Experiment
 import logic.gmcde.GMCDE
+import breeze.stats.{stddev, mean}
 
 /**
  * Compare the power of GMCDE in general case with other competitors.
@@ -57,7 +58,7 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
     info(s"Dependency measure specific params:")
-    info(s"dependency measure: GMCDE")
+    info(s"General Dependency measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")

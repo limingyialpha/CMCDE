@@ -70,6 +70,7 @@ object FirstSecondIterationOutcomeCorrelationAnalysis extends Experiment {
     val attributes = List("genId", "rep", "first", "second")
     val summary = ExperimentSummary(attributes)
     for (gen_ins <- generators) {
+      info(s"now dealing with generator: ${gen_ins.id}")
           val gmcde = GMCDE(parallelize, 1)
           for (rep <- (1 to repetitions).par) {
             val data = gen_ins.generate(observation_num)

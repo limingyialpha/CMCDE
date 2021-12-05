@@ -60,6 +60,7 @@ object DependencyEstimatorConvergenceCompareAndContrastDistribution extends Expe
     for (gen <- generators) {
       val gen_ins = gen(dimension, noise, "gaussian", 0)
       for (estimator <- estimators_of_interest) {
+        info(s"now dealing with generator: ${gen_ins.id}, estimator $estimator")
         for (iteration_num <- (1 to maximum_interested_iteration_number).par) {
           val gmcde = GMCDE(parallelize, iteration_num)
           for (rep <- (1 to repetitions_for_variance_estimation).par) {

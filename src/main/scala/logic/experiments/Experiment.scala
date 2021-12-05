@@ -36,9 +36,9 @@ trait Experiment extends LazyLogging {
   val formatter = new java.text.SimpleDateFormat("yyy-MM-dd-HH-mm")
   val dirname: String = s"${formatter.format(java.util.Calendar.getInstance().getTime)}_${this.getClass.getSimpleName.init}_"
   val experiment_folder: String = master_experiment_folder concat "/" concat dirname
-  val summaryPath = experiment_folder + "/" + this.getClass.getSimpleName.init + ".csv"
+  val summaryPath: String = experiment_folder + "/" + this.getClass.getSimpleName.init + "_scala" + ".csv"
 
-  MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}")
+  MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}_scala")
 
   info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting the experiment ${this.getClass.getSimpleName.init}\n")
   utils.createFolderIfNotExisting(experiment_folder)
@@ -49,7 +49,7 @@ trait Experiment extends LazyLogging {
 
   def info(s: String): Unit = {
     // Repeat the MDC so that we are sure that, even if we are in a subprocess, that the information will be logged centrally
-    MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}")
+    MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}_scala")
     logger.info(s)
   }
 
