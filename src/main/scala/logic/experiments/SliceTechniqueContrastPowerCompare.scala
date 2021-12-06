@@ -28,7 +28,7 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
     Hourglass,
     Zinv,
   )
-  val dimensions_of_interest = Vector(2, 3, 4, 8, 12, 16)
+  val dimensions_of_interest = Vector(2, 4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
@@ -36,7 +36,7 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
   // GMCDE specific params
   val iteration_num = 50
   //parallelize = 0 or 1??? Fork join pool causing problem???
-  val parallelize = 0
+  val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_techniques_of_interest = Vector("c", "su", "u")
   val estimator = "R" // The original implementation in MCDE uses R as slice technique
@@ -89,10 +89,10 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
           val threshold99 = percentile(independent_benchmark_contrasts, 0.99)
           info(s"finished computing thresholds for slice technique $slice_technique, observation number: $obs_num, dimension: $dim")
 
-          for (noise <- noises_of_interest) {
+          for (noise <- noises_of_interest.par) {
             info(s"now dealing with gens: symmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
             // symmetric case
-            for (gen <- generators) {
+            for (gen <- generators.par) {
               val generator_instance = gen(dim, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
                 val data = generator_instance.generate(obs_num)
@@ -109,7 +109,7 @@ object SliceTechniqueContrastPowerCompare extends Experiment {
             }
             // asymmetric case
             info(s"now dealing with gens: asymmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
-            for (gen <- generators) {
+            for (gen <- generators.par) {
               val generator_instance = gen(dim / 2, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
                 val data_sy = generator_instance.generate(obs_num)
