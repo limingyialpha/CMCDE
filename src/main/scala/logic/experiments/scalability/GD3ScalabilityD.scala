@@ -1,4 +1,4 @@
-package logic.experiments.runtime
+package logic.experiments.scalability
 
 import io.github.edouardfouche.generators.{DataGenerator, Independent}
 import logic.experiments.Experiment
@@ -7,19 +7,21 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
- * This experiment analyse the runtime(CPU time) of different canonical correlation measures,
- * with respect to different observation numbers.
+ * This experiment analyse the runtime(CPU time) of different general dependency measures,
+ * with respect to dimensions.
  * Only GMCDE is in scala, others are in Python partner repo.
  * We look at Independent Uniform distribution.
- * Both first and second groups have 2 dimensions, total 4.
- * We look at maximum 1000 observations.
+ * We look at 3 groups of dimensions.
+ * Each group has equal number of dimensions
+ * Observation number is 1000.
+ * We look at maximum 12 dimensions.
  */
-object CanonicalCorrelationObservationNumber extends Experiment {
+object GD3ScalabilityD extends Experiment {
   // data specific params
-  val generator: DataGenerator = Independent(4, 0.0, "gaussian", 0)
-  val dim_x = Set(0, 1)
-  val dim_y = Set(2, 3)
-  val observation_nums_of_interest = Vector(10, 20, 50, 100, 200, 300, 400, 500, 1000)
+  val generator: (Int, Double, String, Int) => DataGenerator = Independent
+  val noise = 0
+  val dimensions_of_interest = Vector(3, 6, 9, 12)
+  val observation_num = 1000
 
   // GMCDE specific params
   val iteration_num = 50
@@ -37,11 +39,12 @@ object CanonicalCorrelationObservationNumber extends Experiment {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    info(s"generator: ${generator.id}")
-    info(s"observation numbers of interest: ${observation_nums_of_interest mkString ","}")
+    info(s"generator: ${generator(0, 0.0, "gaussian", 0).name}")
+    info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
+    info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"Canonical Correlation measure: GMCDE")
+    info(s"General Dependency measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
@@ -54,16 +57,21 @@ object CanonicalCorrelationObservationNumber extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("measure", "obs_num", "avg_cpu_time")
+    val attributes = List("measure", "dim", "avg_cpu_time")
     val summary = ExperimentSummary(attributes)
-    for (obs_num <- observation_nums_of_interest) {
-      info(s"now dealing with observation number: $obs_num")
+    for (dim <- dimensions_of_interest) {
+      info(s"now dealing with dimension: $dim")
+      val gen_ins = generator(dim, noise, "gaussian", 0)
+      val dim_x = (0 until dim / 3).toSet
+      val dim_y = (dim / 3 until dim / 3 * 2).toSet
+      val dim_z = (dim / 3 * 2 until dim).toSet
+      val dim_groups = Set(dim_x,dim_y,dim_z)
       val cpu_times = (1 to repetitions).par.map(_ => {
-        val data = generator.generate(obs_num)
-        StopWatch.measureCPUTime(gmcde.canonical_contrast(data, dim_x, dim_y))._1
+        val data = gen_ins.generate(observation_num)
+        StopWatch.measureCPUTime(gmcde.generalized_contrast(data, dim_groups))._1
       }).toVector
       val avg_cpu_time = mean(cpu_times)
-      val to_write = List("GMCDE", obs_num, avg_cpu_time).mkString(",")
+      val to_write = List("GMCDE", dim, avg_cpu_time).mkString(",")
       summary.direct_write(summaryPath, to_write)
     }
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Finished experiments - ${this.getClass.getSimpleName}")

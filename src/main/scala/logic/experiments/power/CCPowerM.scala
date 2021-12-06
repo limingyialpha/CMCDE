@@ -8,14 +8,12 @@ import logic.gmcde.GMCDE
 import breeze.stats.{stddev, mean}
 
 /**
- * Compare the power of GMCDE in general case with other competitors.
- * The general case we are looking at is:
- * Dependency between 3 groups of dimensions.
+ * Compare the power of GMCDE in canonical correlation case with other competitors.
  * Other competitors are implemented in Python. See partner Repo.
  * We also look at different observation numbers, dimensions, noise levels,
- * symmetric data distributions of all kinds
+ * symmetric/asymmetric data distributions of all kinds
  */
-object GeneralDependency3GroupsPowerCompare extends Experiment {
+object CCPowerM extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
@@ -31,7 +29,7 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
     Hourglass,
     Zinv,
   )
-  val dimensions_of_interest = Vector(6, 9, 12, 15)
+  val dimensions_of_interest = Vector(4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
@@ -58,7 +56,7 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
     info(s"Dependency measure specific params:")
-    info(s"General Dependency measure: GMCDE")
+    info(s"Canonical Correlation measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
@@ -70,7 +68,7 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "dim", "noise", "obs_num", "measure", "avg_cc", "std_cc", "power90", "power95",
+    val attributes = List("genId", "type", "dim", "noise", "obs_num", "measure", "avg_cc", "std_cc", "power90", "power95",
       "power99")
     val summary = ExperimentSummary(attributes)
 
@@ -79,17 +77,15 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
       for (dim <- dimensions_of_interest) {
         info(s"now computing thresholds for measure: GMCDE, observation number: $obs_num, dimension: $dim")
         val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
-        val independent_benchmark_generalized_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+        val independent_benchmark_canonical_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
           val data = independent_benchmark_instance.generate(obs_num)
-          val dim_x = (0 until dim / 3).toSet
-          val dim_y = (dim / 3 until dim / 3 * 2).toSet
-          val dim_z = (dim / 3 * 2 until dim).toSet
-          val dims = Set(dim_x, dim_y, dim_z)
-          gmcde.generalized_contrast(data, dims)
+          val dim_x = (0 until dim / 2).toSet
+          val dim_y = (dim / 2 until dim).toSet
+          gmcde.canonical_contrast(data, dim_x, dim_y)
         }).toVector
-        val threshold90 = percentile(independent_benchmark_generalized_contrasts, 0.90)
-        val threshold95 = percentile(independent_benchmark_generalized_contrasts, 0.95)
-        val threshold99 = percentile(independent_benchmark_generalized_contrasts, 0.99)
+        val threshold90 = percentile(independent_benchmark_canonical_contrasts, 0.90)
+        val threshold95 = percentile(independent_benchmark_canonical_contrasts, 0.95)
+        val threshold99 = percentile(independent_benchmark_canonical_contrasts, 0.99)
         info(s"finished computing thresholds for measure: GMCDE, observation number: $obs_num, dimension: $dim")
 
         for (noise <- noises_of_interest.par) {
@@ -97,20 +93,38 @@ object GeneralDependency3GroupsPowerCompare extends Experiment {
           // symmetric case
           for (gen <- generators.par) {
             val generator_instance = gen(dim, noise, "gaussian", 0)
-            val comparisonalized_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+            val comparison_canonical_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
               val data = generator_instance.generate(obs_num)
-              val dim_x = (0 until dim / 3).toSet
-              val dim_y = (dim / 3 until dim / 3 * 2).toSet
-              val dim_z = (dim / 3 * 2 until dim).toSet
-              val dims = Set(dim_x, dim_y, dim_z)
-              gmcde.generalized_contrast(data, dims)
+              val dim_x = (0 until dim / 2).toSet
+              val dim_y = (dim / 2 until dim).toSet
+              gmcde.canonical_contrast(data, dim_x, dim_y)
             }).toVector
-            val power90 = comparisonalized_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
-            val power95 = comparisonalized_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
-            val power99 = comparisonalized_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
-            val avg_cc = mean(comparisonalized_contrasts)
-            val std_cc = stddev(comparisonalized_contrasts)
-            val to_write = List(generator_instance.id, dim, noise, obs_num, "GMCDE", avg_cc, std_cc, power90, power95, power99).mkString(",")
+            val power90 = comparison_canonical_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
+            val power95 = comparison_canonical_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
+            val power99 = comparison_canonical_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
+            val avg_cc = mean(comparison_canonical_contrasts)
+            val std_cc = stddev(comparison_canonical_contrasts)
+            val to_write = List(generator_instance.id, "sy", dim, noise, obs_num, "GMCDE", avg_cc, std_cc, power90, power95, power99).mkString(",")
+            summary.direct_write(summaryPath, to_write)
+          }
+          // asymmetric case
+          info(s"now dealing with gens: asymmetric, measure: GMCDE, observation number: $obs_num , dimension: $dim, noise $noise")
+          for (gen <- generators.par) {
+            val generator_instance = gen(dim / 2, noise, "gaussian", 0)
+            val comparison_canonical_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+              val data_sy = generator_instance.generate(obs_num)
+              val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(obs_num)
+              val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
+              val dim_x = (0 until dim / 4).toSet union (dim / 2 until dim / 4 * 3).toSet
+              val dim_y = (0 until dim).toSet diff dim_x
+              gmcde.canonical_contrast(data, dim_x, dim_y)
+            }).toVector
+            val power90 = comparison_canonical_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
+            val power95 = comparison_canonical_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
+            val power99 = comparison_canonical_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
+            val avg_cc = mean(comparison_canonical_contrasts)
+            val std_cc = stddev(comparison_canonical_contrasts)
+            val to_write = List(generator_instance.id, "asy", dim, noise, obs_num, "GMCDE", avg_cc, std_cc, power90, power95, power99).mkString(",")
             summary.direct_write(summaryPath, to_write)
           }
         }

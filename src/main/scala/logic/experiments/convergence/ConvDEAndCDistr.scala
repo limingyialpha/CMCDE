@@ -1,16 +1,16 @@
-package logic.experiments
+package logic.experiments.convergence
 
-import io.github.edouardfouche.generators._
+import io.github.edouardfouche.generators.{DataGenerator, Hypercube, Independent, Linear}
+import logic.experiments.Experiment
 import logic.generators.IndependentLinearStripe
 import logic.gmcde.GMCDE
 import logic.utils.StopWatch
-
 
 /**
  * We look at the variance and runtime of approximated contrast of different estimators,
  * with respect to iteration numbers.
  */
-object DependencyEstimatorConvergenceCompareAndContrastDistribution extends Experiment {
+object ConvDEAndCDistr extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Independent,

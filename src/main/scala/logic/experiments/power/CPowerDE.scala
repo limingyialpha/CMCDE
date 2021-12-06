@@ -1,17 +1,18 @@
-package logic.experiments
+package logic.experiments.power
 
 import breeze.stats.DescriptiveStats.percentile
-import breeze.stats.{mean, stddev}
 import io.github.edouardfouche.generators._
 import logic.data.Utility.round
+import logic.experiments.Experiment
 import logic.gmcde.GMCDE
+import breeze.stats.{mean, stddev}
 
 /**
  * Compare the power of MCDE in contrast with different dependency estimators.
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric/asymmetric data distributions of all kinds
  */
-object DependencyEstimatorContrastPowerCompare extends Experiment {
+object CPowerDE extends Experiment {
   // data params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
@@ -27,9 +28,9 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
     Hourglass,
     Zinv,
   )
-  val dimensions_of_interest = Vector(2, 3, 4, 8, 12, 16)
+  val dimensions_of_interest = Vector(2, 4, 8, 12, 16)
   val noise_levels = 30
-  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
@@ -38,7 +39,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
   val estimators_of_interest: Array[String] = Array("R", "ItGR", "ItGI", "ItGIBEV")
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
   val power_computation_iteration_num = 500
@@ -79,7 +80,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
           val independent_benchmark_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
             val data = independent_benchmark_instance.generate(obs_num)
             val dims = (0 until dim).toSet
-            gmcde.contrast(data, dims)(estimator, slice_technique)
+            measure.contrast(data, dims)(estimator, slice_technique)
           }).toVector
           val threshold90 = percentile(independent_benchmark_contrasts, 0.90)
           val threshold95 = percentile(independent_benchmark_contrasts, 0.95)
@@ -94,7 +95,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
                 val data = generator_instance.generate(obs_num)
                 val dims = (0 until dim).toSet
-                gmcde.contrast(data, dims)(estimator, slice_technique)
+                measure.contrast(data, dims)(estimator, slice_technique)
               }).toVector
               val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
               val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
@@ -113,7 +114,7 @@ object DependencyEstimatorContrastPowerCompare extends Experiment {
                 val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(obs_num)
                 val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
                 val dims = (0 until dim).toSet
-                gmcde.contrast(data, dims)(estimator, slice_technique)
+                measure.contrast(data, dims)(estimator, slice_technique)
               }).toVector
               val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
               val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble

@@ -1,4 +1,4 @@
-package logic.experiments.runtime
+package logic.experiments.scalability
 
 import io.github.edouardfouche.generators.{DataGenerator, Independent}
 import logic.experiments.Experiment
@@ -15,7 +15,7 @@ import breeze.stats.mean
  * Each group has 2 dimensions, total 6.
  * We look at maximum 1000 observations.
  */
-object GeneralDependency3GroupsObservationNumber extends Experiment {
+object GD3ScalabilityO extends Experiment {
   // data specific params
   val generator: DataGenerator = Independent(6, 0.0, "gaussian", 0)
   val dim_groups = Set(Set(0, 1), Set(2, 3), Set(4, 5))

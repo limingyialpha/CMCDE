@@ -1,7 +1,7 @@
-import logic.experiments.SliceTechniqueContrastPowerCompare
+import logic.experiments.mcdepaper.Cor12Iteration
 
 object Main {
   def main(args: Array[String]): Unit = {
-    SliceTechniqueContrastPowerCompare.run()
+    Cor12Iteration.run()
   }
 }

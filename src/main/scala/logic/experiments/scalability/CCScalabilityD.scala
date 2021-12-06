@@ -1,4 +1,4 @@
-package logic.experiments.runtime
+package logic.experiments.scalability
 
 import io.github.edouardfouche.generators.{DataGenerator, Independent}
 import logic.experiments.Experiment
@@ -7,20 +7,19 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
- * This experiment analyse the runtime(CPU time) of different general dependency measures,
- * with respect to dimensions.
- * Only GMCDE is in scala, others are in Python partner repo.
- * We look at Independent Uniform distribution.
- * We look at 3 groups of dimensions.
- * Each group has equal number of dimensions
- * Observation number is 1000.
- * We look at maximum 12 dimensions.
+   * This experiment analyse the runtime(CPU time) of different canonical correlation measures,
+   * with respect to dimensions.
+   * Only GMCDE is in scala, others are in Python partner repo.
+   * We look at Independent Uniform distribution.
+   * Each group has equal number of dimensions
+   * Observation number is 1000.
+   * We look at maximum 10 dimensions.
  */
-object GeneralDependency3GroupsDimension extends Experiment {
+object CCScalabilityD extends Experiment {
   // data specific params
   val generator: (Int, Double, String, Int) => DataGenerator = Independent
   val noise = 0
-  val dimensions_of_interest = Vector(3, 6, 9, 12)
+  val dimensions_of_interest = Vector(2, 4, 6, 8, 10)
   val observation_num = 1000
 
   // GMCDE specific params
@@ -39,12 +38,12 @@ object GeneralDependency3GroupsDimension extends Experiment {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    info(s"generator: ${generator(0, 0.0, "gaussian", 0).name}")
+    info(s"generator: ${generator(0,0.0,"gaussian",0).name}")
     info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"General Dependency measure: GMCDE")
+    info(s"Canonical Correlation measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
@@ -61,14 +60,12 @@ object GeneralDependency3GroupsDimension extends Experiment {
     val summary = ExperimentSummary(attributes)
     for (dim <- dimensions_of_interest) {
       info(s"now dealing with dimension: $dim")
-      val gen_ins = generator(dim, noise, "gaussian", 0)
-      val dim_x = (0 until dim / 3).toSet
-      val dim_y = (dim / 3 until dim / 3 * 2).toSet
-      val dim_z = (dim / 3 * 2 until dim).toSet
-      val dim_groups = Set(dim_x,dim_y,dim_z)
+      val gen_ins = generator(dim, noise,"gaussian", 0)
+      val dim_x = (0 until dim/2).toSet
+      val dim_y = (dim/2 until dim).toSet
       val cpu_times = (1 to repetitions).par.map(_ => {
         val data = gen_ins.generate(observation_num)
-        StopWatch.measureCPUTime(gmcde.generalized_contrast(data, dim_groups))._1
+        StopWatch.measureCPUTime(gmcde.canonical_contrast(data, dim_x, dim_y))._1
       }).toVector
       val avg_cpu_time = mean(cpu_times)
       val to_write = List("GMCDE", dim, avg_cpu_time).mkString(",")
