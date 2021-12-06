@@ -7,6 +7,8 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
+ * Scalability of different Measures for General Dependency with 3 groups of dimensions on dimension.
+ *
  * This experiment analyse the runtime(CPU time) of different general dependency measures,
  * with respect to dimensions.
  * Only GMCDE is in scala, others are in Python partner repo.
@@ -29,7 +31,7 @@ object GD3ScalabilityD extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
   val repetitions = 500
@@ -68,7 +70,7 @@ object GD3ScalabilityD extends Experiment {
       val dim_groups = Set(dim_x,dim_y,dim_z)
       val cpu_times = (1 to repetitions).par.map(_ => {
         val data = gen_ins.generate(observation_num)
-        StopWatch.measureCPUTime(gmcde.generalized_contrast(data, dim_groups))._1
+        StopWatch.measureCPUTime(measure.generalized_contrast(data, dim_groups))._1
       }).toVector
       val avg_cpu_time = mean(cpu_times)
       val to_write = List("GMCDE", dim, avg_cpu_time).mkString(",")

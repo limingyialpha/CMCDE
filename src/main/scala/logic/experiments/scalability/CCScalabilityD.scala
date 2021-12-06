@@ -7,13 +7,15 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
-   * This experiment analyse the runtime(CPU time) of different canonical correlation measures,
-   * with respect to dimensions.
-   * Only GMCDE is in scala, others are in Python partner repo.
-   * We look at Independent Uniform distribution.
-   * Each group has equal number of dimensions
-   * Observation number is 1000.
-   * We look at maximum 10 dimensions.
+ * Scalability of different Measures for Canonical Correlation on dimension.
+ *
+ * This experiment analyse the runtime(CPU time) of different canonical correlation measures,
+ * with respect to dimensions.
+ * Only GMCDE is in scala, others are in Python partner repo.
+ * We look at Independent Uniform distribution.
+ * Each group has equal number of dimensions
+ * Observation number is 1000.
+ * We look at maximum 10 dimensions.
  */
 object CCScalabilityD extends Experiment {
   // data specific params
@@ -28,7 +30,7 @@ object CCScalabilityD extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
   val repetitions = 500
@@ -65,7 +67,7 @@ object CCScalabilityD extends Experiment {
       val dim_y = (dim/2 until dim).toSet
       val cpu_times = (1 to repetitions).par.map(_ => {
         val data = gen_ins.generate(observation_num)
-        StopWatch.measureCPUTime(gmcde.canonical_contrast(data, dim_x, dim_y))._1
+        StopWatch.measureCPUTime(measure.canonical_contrast(data, dim_x, dim_y))._1
       }).toVector
       val avg_cpu_time = mean(cpu_times)
       val to_write = List("GMCDE", dim, avg_cpu_time).mkString(",")

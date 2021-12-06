@@ -7,10 +7,13 @@ import logic.gmcde.GMCDE
 import logic.utils.StopWatch
 
 /**
+ * Convergence of different Dependency Estimators and Approximated Contrast Distribution
+ *
  * We look at the variance and runtime of approximated contrast of different estimators,
  * with respect to iteration numbers.
+ * We also look at the approximated contrast distribution with respect to iteration numbers
  */
-object ConvDEAndCDistr extends Experiment {
+object ConvDEAndACDistr extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Independent,
@@ -62,11 +65,11 @@ object ConvDEAndCDistr extends Experiment {
       for (estimator <- estimators_of_interest) {
         info(s"now dealing with generator: ${gen_ins.id}, estimator $estimator")
         for (iteration_num <- (1 to maximum_interested_iteration_number).par) {
-          val gmcde = GMCDE(parallelize, iteration_num)
+          val measure = GMCDE(parallelize, iteration_num)
           for (rep <- (1 to repetitions_for_variance_estimation).par) {
             val data = gen_ins.generate(observation_num)
             val dims = (0 until dimension).toSet
-            val (cpu_time, contrast) = StopWatch.measureCPUTime(gmcde.contrast(data, dims)(estimator, slice_technique))
+            val (cpu_time, contrast) = StopWatch.measureCPUTime(measure.contrast(data, dims)(estimator, slice_technique))
             val to_write = List(gen_ins.id, estimator, iteration_num, rep, contrast, cpu_time).mkString(",")
             summary.direct_write(summaryPath, to_write)
           }

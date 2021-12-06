@@ -7,6 +7,8 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
+ * Scalability of different Measures for Canonical Correlation on observation number.
+ *
  * This experiment analyse the runtime(CPU time) of different canonical correlation measures,
  * with respect to different observation numbers.
  * Only GMCDE is in scala, others are in Python partner repo.
@@ -27,7 +29,7 @@ object CCScalabilityO extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
   val repetitions = 500
@@ -60,7 +62,7 @@ object CCScalabilityO extends Experiment {
       info(s"now dealing with observation number: $obs_num")
       val cpu_times = (1 to repetitions).par.map(_ => {
         val data = generator.generate(obs_num)
-        StopWatch.measureCPUTime(gmcde.canonical_contrast(data, dim_x, dim_y))._1
+        StopWatch.measureCPUTime(measure.canonical_contrast(data, dim_x, dim_y))._1
       }).toVector
       val avg_cpu_time = mean(cpu_times)
       val to_write = List("GMCDE", obs_num, avg_cpu_time).mkString(",")

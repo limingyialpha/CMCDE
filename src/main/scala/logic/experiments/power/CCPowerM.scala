@@ -8,6 +8,8 @@ import logic.gmcde.GMCDE
 import breeze.stats.{stddev, mean}
 
 /**
+ * Statistical Power of different Measures for Canonical Correlation
+ *
  * Compare the power of GMCDE in canonical correlation case with other competitors.
  * Other competitors are implemented in Python. See partner Repo.
  * We also look at different observation numbers, dimensions, noise levels,
@@ -31,7 +33,7 @@ object CCPowerM extends Experiment {
   )
   val dimensions_of_interest = Vector(4, 8, 12, 16)
   val noise_levels = 30
-  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
@@ -40,7 +42,7 @@ object CCPowerM extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology specific params
   val power_computation_iteration_num = 500
@@ -81,7 +83,7 @@ object CCPowerM extends Experiment {
           val data = independent_benchmark_instance.generate(obs_num)
           val dim_x = (0 until dim / 2).toSet
           val dim_y = (dim / 2 until dim).toSet
-          gmcde.canonical_contrast(data, dim_x, dim_y)
+          measure.canonical_contrast(data, dim_x, dim_y)
         }).toVector
         val threshold90 = percentile(independent_benchmark_canonical_contrasts, 0.90)
         val threshold95 = percentile(independent_benchmark_canonical_contrasts, 0.95)
@@ -97,7 +99,7 @@ object CCPowerM extends Experiment {
               val data = generator_instance.generate(obs_num)
               val dim_x = (0 until dim / 2).toSet
               val dim_y = (dim / 2 until dim).toSet
-              gmcde.canonical_contrast(data, dim_x, dim_y)
+              measure.canonical_contrast(data, dim_x, dim_y)
             }).toVector
             val power90 = comparison_canonical_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
             val power95 = comparison_canonical_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
@@ -117,7 +119,7 @@ object CCPowerM extends Experiment {
               val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
               val dim_x = (0 until dim / 4).toSet union (dim / 2 until dim / 4 * 3).toSet
               val dim_y = (0 until dim).toSet diff dim_x
-              gmcde.canonical_contrast(data, dim_x, dim_y)
+              measure.canonical_contrast(data, dim_x, dim_y)
             }).toVector
             val power90 = comparison_canonical_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
             val power95 = comparison_canonical_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble

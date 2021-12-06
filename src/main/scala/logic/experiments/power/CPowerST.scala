@@ -8,6 +8,8 @@ import logic.gmcde.GMCDE
 import breeze.stats.{mean, stddev}
 
 /**
+ * Statistical Power of MCDE with different Slice Techniques for Contrast
+ *
  * Compare the power of MCDE in contrast with different slice techniques.
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric/asymmetric data distributions of all kinds

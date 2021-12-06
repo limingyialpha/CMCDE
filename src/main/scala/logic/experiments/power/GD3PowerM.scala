@@ -8,6 +8,8 @@ import logic.gmcde.GMCDE
 import breeze.stats.{stddev, mean}
 
 /**
+ * Statistical Power of different Measures for General Dependency with 3 groups of dimensions
+ *
  * Compare the power of GMCDE in general case with other competitors.
  * The general case we are looking at is:
  * Dependency between 3 groups of dimensions.
@@ -15,7 +17,7 @@ import breeze.stats.{stddev, mean}
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric data distributions of all kinds
  */
-object GDPowerM extends Experiment {
+object GD3PowerM extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
@@ -33,7 +35,7 @@ object GDPowerM extends Experiment {
   )
   val dimensions_of_interest = Vector(6, 9, 12, 15)
   val noise_levels = 30
-  val noises_of_interest: Array[Double] = (0 to noise_levels).toArray.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
@@ -42,7 +44,7 @@ object GDPowerM extends Experiment {
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
   val estimator = "ItGI" // redundant, since GMCDE uses it internally for canonical correlation
-  val gmcde: GMCDE = GMCDE(parallelize, iteration_num)
+  val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology specific params
   val power_computation_iteration_num = 500
@@ -85,7 +87,7 @@ object GDPowerM extends Experiment {
           val dim_y = (dim / 3 until dim / 3 * 2).toSet
           val dim_z = (dim / 3 * 2 until dim).toSet
           val dims = Set(dim_x, dim_y, dim_z)
-          gmcde.generalized_contrast(data, dims)
+          measure.generalized_contrast(data, dims)
         }).toVector
         val threshold90 = percentile(independent_benchmark_generalized_contrasts, 0.90)
         val threshold95 = percentile(independent_benchmark_generalized_contrasts, 0.95)
@@ -103,7 +105,7 @@ object GDPowerM extends Experiment {
               val dim_y = (dim / 3 until dim / 3 * 2).toSet
               val dim_z = (dim / 3 * 2 until dim).toSet
               val dims = Set(dim_x, dim_y, dim_z)
-              gmcde.generalized_contrast(data, dims)
+              measure.generalized_contrast(data, dims)
             }).toVector
             val power90 = comparisonalized_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
             val power95 = comparisonalized_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
