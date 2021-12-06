@@ -40,7 +40,7 @@ object CCScalabilityD extends Experiment {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    info(s"generator: ${generator(0,0.0,"gaussian",0).name}")
+    info(s"generator: ${generator(2,0.0,"gaussian",0).name}")
     info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
     info(s"observation number: $observation_num")
 
