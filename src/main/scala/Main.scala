@@ -9,10 +9,10 @@ object Main {
 //    CPowerST.run()
 //    CCPowerM.run()
 //    GD3PowerM.run()
-    CCScalabilityD.run()
+//    CCScalabilityD.run()
 //    CCScalabilityO.run()
 //    GD3ScalabilityD.run()
 //    GD3ScalabilityO.run()
-//    ConvDEAndACDistr.run()
+    ConvDEAndACDistr.run()
   }
 }

@@ -71,7 +71,7 @@ object CPowerST extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "dim", "type", "noise", "obs_num", "slice_technique", "avg_cc", "std_cc", "power90", "power95",
+    val attributes = List("genId", "type", "dim", "noise", "obs_num", "slice_technique", "avg_cc", "std_cc", "power90", "power95",
       "power99")
     val summary = ExperimentSummary(attributes)
 
