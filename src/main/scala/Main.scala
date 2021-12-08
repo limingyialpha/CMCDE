@@ -11,8 +11,9 @@ object Main {
 //    GD3PowerM.run()
 //    CCScalabilityD.run()
 //    CCScalabilityO.run()
-//    GD3ScalabilityD.run()
-//    GD3ScalabilityO.run()
+    GC3ScalabilityD.run()
+    GC3ScalabilityO.run()
+    GC3PowerM.run()
 //    ConvDEAndACDistr.run()
   }
 }

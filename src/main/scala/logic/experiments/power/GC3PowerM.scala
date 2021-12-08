@@ -39,7 +39,8 @@ object GC3PowerM extends Experiment {
   val observation_num_of_interest = Vector(100, 1000)
 
   // GMCDE specific params
-  val iteration_num = 50
+  //val iteration_num = 50
+  val iteration_num = 200
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for canonical correlation
   val slice_technique = "c" // redundant, since GMCDE uses it internally for canonical correlation
