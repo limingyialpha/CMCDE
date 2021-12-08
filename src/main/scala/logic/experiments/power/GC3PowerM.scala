@@ -8,7 +8,7 @@ import logic.gmcde.GMCDE
 import breeze.stats.{stddev, mean}
 
 /**
- * Statistical Power of different Measures for General Dependency with 3 groups of dimensions
+ * Statistical Power of different Measures for Generalized Contrast with 3 groups of dimensions
  *
  * Compare the power of GMCDE in general case with other competitors.
  * The general case we are looking at is:
@@ -17,7 +17,7 @@ import breeze.stats.{stddev, mean}
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric data distributions of all kinds
  */
-object GD3PowerM extends Experiment {
+object GC3PowerM extends Experiment {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,

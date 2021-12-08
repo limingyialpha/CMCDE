@@ -7,7 +7,7 @@ import logic.utils.StopWatch
 import breeze.stats.mean
 
 /**
- * Scalability of different Measures for General Dependency with 3 groups of dimensions on dimension.
+ * Scalability of different Measures for Generalized Contrast with 3 groups of dimensions on dimension.
  *
  * This experiment analyse the runtime(CPU time) of different general dependency measures,
  * with respect to dimensions.
@@ -18,7 +18,7 @@ import breeze.stats.mean
  * Observation number is 1000.
  * We look at maximum 12 dimensions.
  */
-object GD3ScalabilityD extends Experiment {
+object GC3ScalabilityD extends Experiment {
   // data specific params
   val generator: (Int, Double, String, Int) => DataGenerator = Independent
   val noise = 0
