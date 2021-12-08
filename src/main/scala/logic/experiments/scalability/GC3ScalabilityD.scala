@@ -62,7 +62,7 @@ object GC3ScalabilityD extends Experiment {
     val attributes = List("measure", "dim", "avg_cpu_time")
     val summary = ExperimentSummary(attributes)
     for (dim <- dimensions_of_interest) {
-      info(s"now dealing with dimension: $dim")
+      info(s"now dealing with measure: GMCDE, dimension: $dim")
       val gen_ins = generator(dim, noise, "gaussian", 0)
       val dim_x = (0 until dim / 3).toSet
       val dim_y = (dim / 3 until dim / 3 * 2).toSet

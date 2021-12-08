@@ -59,7 +59,7 @@ object GC3ScalabilityO extends Experiment {
     val attributes = List("measure", "obs_num", "avg_cpu_time")
     val summary = ExperimentSummary(attributes)
     for (obs_num <- observation_nums_of_interest) {
-      info(s"now dealing with observation number: $obs_num")
+      info(s"now dealing with measure: GMCDE, observation number: $obs_num")
       val cpu_times = (1 to repetitions).par.map(_ => {
         val data = generator.generate(obs_num)
         StopWatch.measureCPUTime(measure.generalized_contrast(data, dim_groups))._1
