@@ -34,7 +34,7 @@ trait Experiment extends LazyLogging {
   val master_experiment_folder: String = output_folder concat "/" concat "experiments"
   utils.createFolderIfNotExisting(master_experiment_folder)
   val formatter = new java.text.SimpleDateFormat("yyy-MM-dd-HH-mm")
-  val dirname: String = s"${formatter.format(java.util.Calendar.getInstance().getTime)}_${this.getClass.getSimpleName.init}_"
+  val dirname: String = s"${formatter.format(java.util.Calendar.getInstance().getTime)}_${this.getClass.getSimpleName.init}_scala"
   val experiment_folder: String = master_experiment_folder concat "/" concat dirname
   val summaryPath: String = experiment_folder + "/" + this.getClass.getSimpleName.init + "_scala" + ".csv"
 

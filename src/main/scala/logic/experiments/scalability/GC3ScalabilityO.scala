@@ -43,7 +43,7 @@ object GC3ScalabilityO extends Experiment {
     info(s"observation numbers of interest: ${observation_nums_of_interest mkString ","}")
 
     info(s"Dependency measure specific params:")
-    info(s"General Dependency measure: GMCDE")
+    info(s"Generalized Contrast measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")

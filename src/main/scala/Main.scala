@@ -5,15 +5,5 @@ import logic.experiments.scalability.{CCScalabilityD, CCScalabilityO, GC3Scalabi
 
 object Main {
   def main(args: Array[String]): Unit = {
-//    CPowerDE.run()
-//    CPowerST.run()
-//    CCPowerM.run()
-//    GD3PowerM.run()
-//    CCScalabilityD.run()
-//    CCScalabilityO.run()
-    GC3ScalabilityD.run()
-    GC3ScalabilityO.run()
-    GC3PowerM.run()
-//    ConvDEAndACDistr.run()
   }
 }
