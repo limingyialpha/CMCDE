@@ -73,7 +73,7 @@ object GC3PowerM extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "dim", "noise", "obs_num", "measure", "avg_cc", "std_cc", "power90", "power95",
+    val attributes = List("genId", "dim", "noise", "obs_num", "measure", "avg_gc", "std_gc", "power90", "power95",
       "power99")
     val summary = ExperimentSummary(attributes)
 
