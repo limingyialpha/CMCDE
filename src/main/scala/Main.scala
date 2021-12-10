@@ -8,5 +8,7 @@ object Main {
   def main(args: Array[String]): Unit = {
     CPowerDE.run()
     CPowerST.run()
+    CCPowerM.run()
+    GC3PowerM.run()
   }
 }
