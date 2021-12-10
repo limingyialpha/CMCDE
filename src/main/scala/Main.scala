@@ -6,6 +6,7 @@ import logic.experiments.sanity.Sanity
 
 object Main {
   def main(args: Array[String]): Unit = {
-    ConvDEAndACDistr.run()
+    CPowerDE.run()
+    CPowerST.run()
   }
 }
