@@ -30,7 +30,8 @@ object CPowerDE extends Experiment {
     Hourglass,
     Zinv,
   )
-  val dimensions_of_interest = Vector(2, 4, 8, 12, 16)
+  val dimensions_of_interest_sy = Vector(2, 4, 8, 12, 16)
+  val dimensions_of_interest_asy = Vector(4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
@@ -52,7 +53,8 @@ object CPowerDE extends Experiment {
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
     info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
-    info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
+    info(s"dimensions of interest for symmetric datasets: ${dimensions_of_interest_sy mkString ","}")
+    info(s"dimensions of interest for asymmetric datasets: ${dimensions_of_interest_asy mkString ","}")
     info(s"noise levels: $noise_levels")
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
@@ -69,14 +71,14 @@ object CPowerDE extends Experiment {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "type", "dim", "noise", "obs_num", "estimator", "avg_cc", "std_cc", "power90", "power95",
+    val attributes = List("genId", "type", "dim", "noise", "obs_num", "estimator", "avg_c", "std_c", "power90", "power95",
       "power99")
     val summary = ExperimentSummary(attributes)
 
 
     for (estimator <- estimators_of_interest) {
       for (obs_num <- observation_num_of_interest) {
-        for (dim <- dimensions_of_interest) {
+        for (dim <- dimensions_of_interest_sy) {
           info(s"now computing thresholds for estimator $estimator, observation number: $obs_num, dimension: $dim")
           val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
           val independent_benchmark_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
@@ -107,24 +109,27 @@ object CPowerDE extends Experiment {
               val to_write = List(generator_instance.id, "sy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
+
             // asymmetric case
-            info(s"now dealing with gens: asymmetric, estimator $estimator, observation number: $obs_num, dimension: $dim, noise $noise")
-            for (gen <- generators.par) {
-              val generator_instance = gen(dim / 2, noise, "gaussian", 0)
-              val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
-                val data_sy = generator_instance.generate(obs_num)
-                val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(obs_num)
-                val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
-                val dims = (0 until dim).toSet
-                measure.contrast(data, dims)(estimator, slice_technique)
-              }).toVector
-              val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
-              val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
-              val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
-              val avg_cc = mean(comparison_contrasts)
-              val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id, "asy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
-              summary.direct_write(summaryPath, to_write)
+            if (dim >= dimensions_of_interest_asy(0)) {
+              info(s"now dealing with gens: asymmetric, estimator $estimator, observation number: $obs_num, dimension: $dim, noise $noise")
+              for (gen <- generators.par) {
+                val generator_instance = gen(dim / 2, noise, "gaussian", 0)
+                val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+                  val data_sy = generator_instance.generate(obs_num)
+                  val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(obs_num)
+                  val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
+                  val dims = (0 until dim).toSet
+                  measure.contrast(data, dims)(estimator, slice_technique)
+                }).toVector
+                val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
+                val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
+                val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
+                val avg_cc = mean(comparison_contrasts)
+                val std_cc = stddev(comparison_contrasts)
+                val to_write = List(generator_instance.id, "asy", dim, noise, obs_num, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+                summary.direct_write(summaryPath, to_write)
+              }
             }
           }
         }

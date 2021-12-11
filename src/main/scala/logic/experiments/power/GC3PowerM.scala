@@ -100,7 +100,7 @@ object GC3PowerM extends Experiment {
           // symmetric case
           for (gen <- generators.par) {
             val generator_instance = gen(dim, noise, "gaussian", 0)
-            val comparisonalized_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+            val comparison_generalized_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
               val data = generator_instance.generate(obs_num)
               val dim_x = (0 until dim / 3).toSet
               val dim_y = (dim / 3 until dim / 3 * 2).toSet
@@ -108,12 +108,12 @@ object GC3PowerM extends Experiment {
               val dims = Set(dim_x, dim_y, dim_z)
               measure.generalized_contrast(data, dims)
             }).toVector
-            val power90 = comparisonalized_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
-            val power95 = comparisonalized_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
-            val power99 = comparisonalized_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
-            val avg_cc = mean(comparisonalized_contrasts)
-            val std_cc = stddev(comparisonalized_contrasts)
-            val to_write = List(generator_instance.id, dim, noise, obs_num, "GMCDE", avg_cc, std_cc, power90, power95, power99).mkString(",")
+            val power90 = comparison_generalized_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
+            val power95 = comparison_generalized_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
+            val power99 = comparison_generalized_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
+            val avg_gc = mean(comparison_generalized_contrasts)
+            val std_gc = stddev(comparison_generalized_contrasts)
+            val to_write = List(generator_instance.id, dim, noise, obs_num, "GMCDE", avg_gc, std_gc, power90, power95, power99).mkString(",")
             summary.direct_write(summaryPath, to_write)
           }
         }
