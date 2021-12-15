@@ -12,7 +12,7 @@ import breeze.stats.mean
  * We expect the generalized contrast to stay the same or at least increase.
  * GMCDE is in scala repo and dHSIC is in python repo
  */
-object Duplicate extends Experiment {
+class Duplicate(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   // actually not used, just for reference
   val duplicate: Array[Array[Double]] = (0 until 1000).map(x => Array(x.toDouble/1000.0)).toArray

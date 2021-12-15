@@ -14,7 +14,7 @@ import breeze.stats.{mean, stddev}
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric/asymmetric data distributions of all kinds
  */
-object CPowerST extends Experiment {
+class CPowerST(output_folder: String) extends Experiment(output_folder) {
   // data params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,

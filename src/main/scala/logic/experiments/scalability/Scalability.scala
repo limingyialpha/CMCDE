@@ -2,11 +2,11 @@ package logic.experiments.scalability
 
 import logic.experiments.Experiment
 
-object Scalability extends Experiment {
+class Scalability(output_folder: String) extends Experiment(output_folder) {
   def run(): Unit = {
-    CCScalabilityD.run()
-    CCScalabilityO.run()
-    GC3ScalabilityD.run()
-    GC3ScalabilityO.run()
+    new CCScalabilityD(output_folder).run()
+    new CCScalabilityO(output_folder).run()
+    new GC3ScalabilityD(output_folder).run()
+    new GC3ScalabilityO(output_folder).run()
   }
 }

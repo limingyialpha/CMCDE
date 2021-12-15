@@ -16,7 +16,7 @@ import breeze.stats.mean
  * Each group has equal number of dimensions
  * Observation number is 1000.
  */
-object CCScalabilityD extends Experiment {
+class CCScalabilityD(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generator: (Int, Double, String, Int) => DataGenerator = Independent
   val noise = 0
@@ -66,7 +66,7 @@ object CCScalabilityD extends Experiment {
     // later iterations will be automatically optimized by the system, thus faster
     // initial one do not, as a result, we try to let the program run for a while then start
     for (dim <- dimensions_of_interest) {
-      info(s"now doing pre-run with measure: GMCDE, dimension: ${dim}")
+      info(s"now doing pre-run with measure: GMCDE, dimension: $dim")
       val gen_ins = generator(dim, noise, "gaussian", 0)
       val dim_x = (0 until dim / 2).toSet
       val dim_y = (dim / 2 until dim).toSet

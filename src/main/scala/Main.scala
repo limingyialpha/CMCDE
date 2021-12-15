@@ -6,9 +6,10 @@ import logic.experiments.sanity.Sanity
 
 object Main {
   def main(args: Array[String]): Unit = {
-    CCPowerM.run()
-    GC3PowerM.run()
-    CPowerST.run()
-    CPowerDE.run()
+    val output_folder = args(0)
+    new CCPowerM(output_folder).run()
+    new GC3PowerM(output_folder).run()
+    new CPowerST(output_folder).run()
+    new CPowerDE(output_folder).run()
   }
 }

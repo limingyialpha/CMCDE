@@ -16,7 +16,7 @@ import breeze.stats.mean
  * We look at 3 groups of dimensions.
  * Each group has 2 dimensions, total 6.
  */
-object GC3ScalabilityO extends Experiment {
+class GC3ScalabilityO(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generator: DataGenerator = Independent(6, 0.0, "gaussian", 0)
   val dim_groups = Set(Set(0, 1), Set(2, 3), Set(4, 5))
