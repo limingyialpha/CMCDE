@@ -29,6 +29,7 @@ object CPowerST extends Experiment {
     Star,
     Hourglass,
     Zinv,
+    Independent
   )
   val dimensions_of_interest_sy = Vector(2, 4, 8, 12, 16)
   val dimensions_of_interest_asy = Vector(4, 8, 12, 16)
