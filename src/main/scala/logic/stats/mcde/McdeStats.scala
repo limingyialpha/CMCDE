@@ -3,6 +3,9 @@ package logic.stats.mcde
 import scala.collection.parallel.ForkJoinTaskSupport
 import logic.index.Index
 import logic.data.Utility.cumulative_sum
+
+import scala.collection.parallel.immutable.ParRange
+
 // breeze.stats.variance computes the empirical variance
 import breeze.stats.variance
 
@@ -14,7 +17,7 @@ trait McdeStats {
   // alpha is the expected share of instances in slice.
   val alpha: Double
   // Iteration number for contrast / generalized contrast approximation.
-  val M: Int
+  val num_iterations: Int
   // level of parallelism
   var parallelize: Int
   // these are the possible dependency estimators for contrast approximation
@@ -39,45 +42,182 @@ trait McdeStats {
    * "ItGIBEV" => head: Iterating reference dimensions, Tail: Grouping dimensions by tracked Influence, Balance head and tail with Empirical Variance
    * Implementations and details below and in GMCDE paper.
    */
-  def contrast(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(estimator: String = "R", slice_technique: String = "c"): Double = {
+  def contrast(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(estimator: String = "R", slice_technique: String = "c"): Double = {
     estimator match {
-      case "R" => contrast_random_ref_dim(m, dimensions, MC_num)(slice_technique)
-      case "ItR" => contrast_iterate_ref_dim_tail_random(m, dimensions, MC_num)(slice_technique)
-      case "ItGR" => contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m, dimensions, MC_num)(slice_technique)
-      case "ItGI" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m, dimensions, MC_num)(slice_technique)
-      case "ItGIBEV" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m, dimensions, MC_num)(slice_technique)
+      case "R" => contrast_random_ref_dim(m, dims_set, num_iterations)(slice_technique)
+      case "ItR" => contrast_iterate_ref_dim_tail_random(m, dims_set, num_iterations)(slice_technique)
+      case "ItGR" => contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m, dims_set, num_iterations)(slice_technique)
+      case "ItGI" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m, dims_set, num_iterations)(slice_technique)
+      case "ItGIBEV" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m, dims_set, num_iterations)(slice_technique)
     }
+  }
+
+  def get_range(end: Int): Range = {
+    0 until end
+  }
+
+  def get_par_range(end: Int): ParRange = {
+    val iterable = (0 until end).par
+    if (parallelize > 1) {
+      iterable.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
+    }
+    iterable
+  }
+
+  def get_slice_size_with_ref_dim(dims_set: Set[Int], num_obs: Int): Int = {
+    (math.pow(alpha, 1.0 / (dims_set.size - 1.0)) * num_obs).ceil.toInt
+  }
+
+  def get_slice_size_without_ref_dim(dims_set: Set[Int], num_obs: Int): Int = {
+    (math.pow(alpha, 1.0 / dims_set.size) * num_obs).ceil.toInt
+  }
+
+  def get_num_head_great_iterations(num_dims: Int, num_iterations: Int): Int = {
+    num_iterations / num_dims
+  }
+
+  def get_num_head_iterations(num_dims: Int, num_iterations: Int): Int = {
+    num_iterations / num_dims * num_dims
+  }
+
+  def get_num_tail_iterations(num_dims: Int, num_iterations: Int): Int = {
+    num_iterations - num_iterations / num_dims * num_dims
+  }
+
+  def get_random_ref_dim(dims_vec: Vector[Int]): Int = {
+    dims_vec(scala.util.Random.nextInt(dims_vec.size))
+  }
+
+  def get_itvs_by_R(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int)(slice_technique: String = "c"): Vector[Double] = {
+    val slice_size = get_slice_size_with_ref_dim(dims_set, m.num_obs)
+    val dims_vec = dims_set.toVector
+
+    val itvs = {
+      if (parallelize == 0) {
+        val range = get_range(num_iterations)
+        range.map(_ => {
+          val ref_dim = get_random_ref_dim(dims_vec)
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique))
+        }).toVector
+      } else {
+        val par_range = get_par_range(num_iterations)
+        par_range.map(_ => {
+          val ref_dim = get_random_ref_dim(dims_vec)
+          twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique))
+        }).toVector
+      }
+    }
+    itvs
+  }
+
+  def get_itv_ref_dim_pairs_by_I(m: PreprocessedData, dims_set: Set[Int], num_great_iterations: Int)(slice_technique: String = "c"): Vector[(Double, Int)] = {
+    val num_dims = dims_set.size
+    val slice_size = get_slice_size_with_ref_dim(dims_set, m.num_obs)
+    val dims_vec = dims_set.toVector
+
+    val num_iterations = num_great_iterations * num_dims
+
+    val itv_ref_dim_pairs = {
+      if (parallelize == 0) {
+        val range = get_range(num_iterations)
+        range.map(k => {
+          val ref_dim = dims_vec(k % num_dims)
+          (twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique)), ref_dim)
+        }).toVector
+      } else {
+        val par_range = get_par_range(num_iterations)
+        par_range.map(k => {
+          val ref_dim = dims_vec(k % num_dims)
+          (twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique)), ref_dim)
+        }).toVector
+      }
+    }
+    itv_ref_dim_pairs
+  }
+
+  def get_itvs_by_I(m: PreprocessedData, dims_set: Set[Int], num_great_iterations: Int)(slice_technique: String = "c"): Vector[Double] = {
+    get_itv_ref_dim_pairs_by_I(m, dims_set, num_great_iterations)(slice_technique).map(x => x._1)
+  }
+
+  def get_itv_dims_bin_pairs_from_bins(m: PreprocessedData, dims_bins: Set[Set[Int]])(slice_technique: String = "c"): Vector[(Double, Set[Int])] = {
+    val dims_set = dims_bins.flatten
+    val slice_size = get_slice_size_with_ref_dim(dims_set, m.num_obs)
+
+    val itv_dims_bin_pair = {
+      if (parallelize == 0) {
+        val range = dims_bins
+        range.map(bin => {
+          val bin_vec = bin.toVector
+          val ref_dim = get_random_ref_dim(bin_vec)
+          (twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique)), bin)
+        }).toVector
+      } else {
+        val par_range = dims_bins.par
+        par_range.map(bin => {
+          val bin_vec = bin.toVector
+          val ref_dim = get_random_ref_dim(bin_vec)
+          (twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique)), bin)
+        }).toVector
+      }
+    }
+    itv_dims_bin_pair
+  }
+
+  def get_itvs_from_bins(m: PreprocessedData, dims_bins: Set[Set[Int]])(slice_technique: String = "c"): Vector[Double] = {
+    get_itv_dims_bin_pairs_from_bins(m, dims_bins)(slice_technique).map(x => x._1)
+  }
+
+  def get_tail_bins(dims_set: Set[Int], num_tail_iterations: Int): Set[Set[Int]] = {
+    val num_dims = dims_set.size
+    val dims_vec = dims_set.toVector
+
+    val tail_bins_sizes = (0 until num_tail_iterations).map(x => {
+      val overflow = if (x < num_dims % num_tail_iterations) 1 else 0
+      overflow + num_dims / num_tail_iterations
+    }).toVector
+    val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
+    (0 until num_tail_iterations).map(x => {
+      val current_bin_size = tail_bins_sizes(x)
+      dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x)).toSet
+    }).toSet
+  }
+
+  def get_tail_bins_by_influence(dims_set: Set[Int], num_tail_iterations: Int, head_itv_ref_dim_pairs: Vector[(Double, Int)]): Set[Set[Int]] = {
+    val num_dims = dims_set.size
+
+    val sorted_dims_vec = {
+      (0 until num_dims).map(i => {
+        val selected_values = head_itv_ref_dim_pairs.filter(x => x._2 == i).map(x => x._1)
+        (selected_values.sum, i)
+      }).sortBy(x => x._1).map(x => x._2).toVector
+    }
+
+    val tail_bins_sizes = (0 until num_tail_iterations).map(x => {
+      val overflow = if (x < num_dims % num_tail_iterations) 1 else 0
+      overflow + num_dims / num_tail_iterations
+    }).toVector
+    val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
+    (0 until num_tail_iterations).map(x => {
+      val current_bin_size = tail_bins_sizes(x)
+      sorted_dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x)).toSet
+    }).toSet
+  }
+
+  def get_empirical_var(bin: Set[Int], head_itv_ref_dim_pairs: Vector[(Double, Int)]): Double = {
+    val values = head_itv_ref_dim_pairs.filter(x => bin.contains(x._2)).map(x => x._1)
+    variance(values)
   }
 
   /**
    * Original dependency estimator in MCDE where reference dimensions are randomly chosen
    * the true Monte Carlo
    */
-  def contrast_random_ref_dim(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    // Sanity check
-    // require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
-    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
-    //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
-
-    val result = {
-      if (parallelize == 0) {
-        (1 to MC_num).map(_ => {
-          val referenceDim = dimensions.toVector(scala.util.Random.nextInt(dimensions.size))
-          twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize)(slice_technique))
-        }).sum / MC_num
-      }
-      else {
-        val iterations = (1 to MC_num).par
-        if (parallelize > 1) {
-          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-        }
-        iterations.map(_ => {
-          val referenceDim = dimensions.toVector(scala.util.Random.nextInt(dimensions.size))
-          twoSample(m, referenceDim, m.slice_with_ref_dim(dimensions, referenceDim, sliceSize)(slice_technique))
-        }).sum / MC_num
-      }
+  def contrast_random_ref_dim(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    if (num_iterations == 0) {
+      -1
+    } else {
+      get_itvs_by_R(m, dims_set, num_iterations)(slice_technique).sum / num_iterations
     }
-    result
   }
 
   /**
@@ -86,46 +226,22 @@ trait McdeStats {
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_random(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    // Sanity check
-    //require(dimensions.forall(x => x>=0 & x < m.length), "The dimensions for deviation need to be greater or equal to 0 and lower than the total number of dimensions")
-    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
-    //println(s"dimensions $dimensions, sliceSize: ${sliceSize}")
-    val num_dims = dimensions.size
-    // for example 50 MC iterations with 8 dimensions 50/8*8 = 48
-    val upper_boarder: Int = MC_num / num_dims * num_dims
+  def contrast_iterate_ref_dim_tail_random(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    val num_dims = dims_set.size
+    val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
-    val dims_vec = dimensions.toVector
-
-    val dims_set = dimensions
-
-    val result = if (parallelize == 0) {
-      (1 to MC_num).map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i - 1) % num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-      }).sum / MC_num
+    if (num_iterations == 0) {
+      -1.0
+    } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
+      get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
+    } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
+      get_itvs_by_R(m, dims_set, num_tail_iterations)(slice_technique).sum / num_iterations
     } else {
-      val iterations = (1 to MC_num).par
-      if (parallelize > 1) {
-        iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-      }
-      iterations.map(i => {
-        val referenceDim = if (i <= upper_boarder) dims_vec((i - 1) % num_dims) else dims_vec(scala.util.Random.nextInt(num_dims))
-        twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-      }).sum / MC_num
+      val head_itvs = get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val tail_itvs = get_itvs_by_R(m, dims_set, num_tail_iterations)(slice_technique)
+      (head_itvs.sum + tail_itvs.sum) / num_iterations
     }
-    result
-  }
-
-
-  // for example, 7 iterations left, 100 dimensions, then we have(15,15,14,14,14,14,14),
-  // 7 nearly equal size bins
-  def get_tail_bin_sizes(num_dims: Int, tail_MC_num: Int): Vector[Int] = {
-    require(num_dims > tail_MC_num, "The number of dimensions should greater than the tail MC_number")
-    (0 until tail_MC_num).map(x => {
-      val overflow = if (x < num_dims % tail_MC_num) 1 else 0
-      overflow + num_dims / tail_MC_num
-    }).toVector
   }
 
   /**
@@ -135,75 +251,24 @@ trait McdeStats {
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
+  def contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    val num_dims = dims_set.size
+    val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
-    val dims_vec = dimensions.toVector
-
-    val dims_set = dimensions
-
-    val num_dims = dimensions.size
-
-    // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
-    val head_great_iteration_num: Int = MC_num / num_dims
-    // 6*8 = 48 small MC iterations
-    val head_MC_number: Int = head_great_iteration_num * num_dims
-    // tail MC number is then 50 - 48 = 2
-    val tail_MC_number: Int = MC_num - head_MC_number
-
-    val head_contrast = if (head_MC_number >= 1) {
-      if (parallelize == 0) {
-        (1 to head_MC_number).map(i => {
-          val referenceDim = dims_vec((i - 1) % num_dims)
-          twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-        }).sum / head_MC_number
-      } else {
-        val iterations = (1 to head_MC_number).par
-        if (parallelize > 1) {
-          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-        }
-        iterations.map(i => {
-          val referenceDim = dims_vec((i - 1) % num_dims)
-          twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-        }).sum / head_MC_number
-      }
-    } else 0
-
-    val tail_contrast = if (tail_MC_number >= 1) {
-
-      // for example, 7 iterations left, 100 dimensions, then we have
-      // (15,15,14,14,14,14,14), 7 nearly equal size bins
-      val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
-
-      //(15, 30, 44, 58, 72, 86, 100)
-      val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
-
-      if (parallelize == 0) {
-        (0 until tail_MC_number).map(x => {
-          val current_bin_size = tail_bins_sizes(x)
-          // crucial
-          val dims_in_the_bin = dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-          // do not forget current_bin_size.toDouble!!!
-          twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-        }).sum
-      } else {
-        val iterations = (0 until tail_MC_number).par
-        if (parallelize > 1) {
-          iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-        }
-        iterations.map(x => {
-          val current_bin_size = tail_bins_sizes(x)
-          // crucial
-          val dims_in_the_bin = dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-          val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-          twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-        }).sum
-      }
-    } else 0
-
-    val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number) / MC_num
-    contrast
+    if (num_iterations == 0) {
+      -1.0
+    } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
+      get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
+    } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
+      val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
+    } else {
+      val head_itvs = get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
+      (head_itvs.sum + tail_itvs.sum) / num_iterations
+    }
   }
 
 
@@ -216,89 +281,24 @@ trait McdeStats {
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    if (MC_num == 0) -1 else {
-      val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
+  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    val num_dims = dims_set.size
+    val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
-      val dims_vec = dimensions.toVector
-
-      val dims_set = dimensions
-
-      val num_dims = dimensions.size
-
-      // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
-      val head_great_iteration_num: Int = MC_num / num_dims
-      // 6*8 = 48 small MC iterations
-      val head_MC_number: Int = head_great_iteration_num * num_dims
-      // tail MC number is then 50 - 48 = 2
-      val tail_MC_number: Int = MC_num - head_MC_number
-
-      val head_influence_vec: Vector[Double] = if (head_MC_number >= 1) {
-        if (parallelize == 0) {
-          (1 to head_MC_number).map(i => {
-            val referenceDim = dims_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-          }).toVector
-        } else {
-          val iterations = (1 to head_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(i => {
-            val referenceDim = dims_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-          }).toVector
-        }
-      } else Vector(0.0) // a dumb variable that will never be used
-
-      val head_contrast = if (head_MC_number >= 1) head_influence_vec.sum / head_MC_number else 0
-
-      val tail_contrast = if (tail_MC_number >= 1) {
-
-        // if head_number = 0 => we have not got information about the influences from each dimension
-        // we simply use dims_vec else, we can analyze the influence vector from the previous iterations
-        // and sort the dim vec by their sum of influences
-        val sorted_dims_vec = if (head_MC_number == 0) dims_vec else {
-          val zipped = head_influence_vec.zipWithIndex
-          (0 until num_dims).map(i => {
-            val selected_vec = zipped.filter(x => x._2 % num_dims == i).map(x => x._1)
-            selected_vec.sum
-          }).zip(dims_vec).sortBy(x => x._1).map(x => x._2).toVector
-        }
-
-        // for example, 7 iterations left, 100 dimensions, then we have
-        // (15,15,14,14,14,14,14), 7 nearly equal size bins
-        val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
-
-        //(15, 30, 44, 58, 72, 86, 100)
-        val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
-
-        if (parallelize == 0) {
-          (0 until tail_MC_number).map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            // do not forget current_bin_size.toDouble!!!
-            twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
-        } else {
-          val iterations = (0 until tail_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
-        }
-      } else 0
-
-      val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number) / MC_num
-      contrast
+    if (num_iterations == 0) {
+      -1.0
+    } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
+      get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
+    } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
+      val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
+    } else {
+      val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
+      (head_itvs.sum + tail_itvs.sum) / num_iterations
     }
   }
 
@@ -313,120 +313,56 @@ trait McdeStats {
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m: PreprocessedData, dimensions: Set[Int], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    if (MC_num == 0) -1 else {
+  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    val num_dims = dims_set.size
+    val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
+    val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
-      val sliceSize = (math.pow(alpha, 1.0 / (dimensions.size - 1.0)) * m.num_obs).ceil.toInt /// WARNING: Do not forget -1
+    if (num_iterations == 0) {
+      -1.0
+    } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
+      get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
+    } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
+      val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
+    } else if (num_head_great_iterations <= 1 & num_tail_iterations != 0) {
+      val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
+      (head_itvs.sum + tail_itvs.sum) / num_iterations
+    } else {
+      val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val head_contrast = head_itvs.sum / num_head_iterations
 
-      val dims_vec = dimensions.toVector
+      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
 
-      val dims_set = dimensions
+      val head_empirical_var = dims_set.map(dim => get_empirical_var(Set(dim), head_itv_ref_dim_pairs)).sum * num_head_great_iterations / math.pow(num_head_iterations, 2)
+      val tail_empirical_var = tail_bins.map(bin => get_empirical_var(bin, head_itv_ref_dim_pairs) * math.pow(bin.size / num_dims, 2)).sum
 
-      val num_dims = dimensions.size
-
-      // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
-      val head_great_iteration_num: Int = MC_num / num_dims
-      // 6*8 = 48 small MC iterations
-      val head_MC_number: Int = head_great_iteration_num * num_dims
-      // tail MC number is then 50 - 48 = 2
-      val tail_MC_number: Int = MC_num - head_MC_number
-
-      val head_influence_vec: Vector[Double] = if (head_MC_number >= 1) {
-        if (parallelize == 0) {
-          (1 to head_MC_number).map(i => {
-            val referenceDim = dims_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-          }).toVector
-        } else {
-          val iterations = (1 to head_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(i => {
-            val referenceDim = dims_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_with_ref_dim(dims_set, referenceDim, sliceSize)(slice_technique))
-          }).toVector
-        }
-      } else Vector(0.0) // a dumb variable that will never be used
-
-      val head_contrast = if (head_MC_number >= 1) head_influence_vec.sum / head_MC_number else 0
-
-      val (tail_contrast, beta) = if (tail_MC_number >= 1) {
-
-        // if head_number = 0 => we have not got information about the influences from each dimension
-        // we simply use dims_vec else, we can analyze the influence vector from the previous iterations
-        // and sort the dim vec by their sum of influences
-        val sorted_dims_vec = if (head_MC_number == 0) dims_vec else {
-          val zipped = head_influence_vec.zipWithIndex
-          (0 until num_dims).map(i => {
-            val selected_vec = zipped.filter(x => x._2 % num_dims == i).map(x => x._1)
-            selected_vec.sum
-          }).zip(dims_vec).sortBy(x => x._1).map(x => x._2).toVector
-        }
-
-        // for example, 7 iterations left, 100 dimensions, then we have
-        // (15,15,14,14,14,14,14), 7 nearly equal size bins
-        val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
-
-        //(15, 30, 44, 58, 72, 86, 100)
-        val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
-
-        val tail_contrast = if (parallelize == 0) {
-          (0 until tail_MC_number).map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            // do not forget current_bin_size.toDouble!!!
-            twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
-        } else {
-          val iterations = (0 until tail_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dims_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, sliceSize)(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
-        }
-
-        // beta is the Tail estimator balancing weight factor
-        // beta = min( V(Head) / (V(Head) + V(Tail)), tail_MC_number / MC_num) if head_great_iteration_num greater equal a number,
-        // beta = tail_MC_number / MC_num else
-        val beta = if (head_great_iteration_num <= 1) tail_MC_number.toDouble / MC_num else {
-          // this method gets the elements in the influence_vec where i % dims == index
-          def get_ith_elements(influence_vec: Vector[Double], num_dims: Int, indices: Set[Int]): Vector[Double] = {
-            influence_vec.zipWithIndex.filter(x => indices.contains(x._2 % num_dims)).map(x => x._1)
-          }
-
-          val var_head = (0 until num_dims).map(d => {
-            val influences = get_ith_elements(head_influence_vec, num_dims, Set(d))
-            variance(influences)
-          }).sum * head_great_iteration_num / (head_MC_number * head_MC_number)
-
-          val var_tail = tail_bins_sizes.indices.map(b => {
-            val current_bin_size = tail_bins_sizes(b)
-            val dims_in_the_bin = ((tail_bins_start_index(b) - current_bin_size) until tail_bins_start_index(b)).toSet
-            val influences = get_ith_elements(head_influence_vec, num_dims, dims_in_the_bin)
-            variance(influences) * scala.math.pow(current_bin_size.toDouble / num_dims, 2)
-          }).sum
-
-          // this happens in perfectly linear case
-          if ((var_head == 0.0) & (var_tail == 0.0)) {
-            tail_MC_number.toDouble / MC_num
-          } else {
-            (var_head / (var_head + var_tail)).min(tail_MC_number.toDouble / MC_num)
-          }
-        }
-        (tail_contrast, beta)
-      } else (0.0, 0.0)
-      val contrast = (1.0 - beta) * head_contrast + beta * tail_contrast
-      contrast
+      // beta is the Tail estimator balancing weight factor
+      // beta = min( (V(Head) / (V(Head) + V(Tail)), num_tail_iterations / num_iterations)
+      // For safety, we should not underestimate the variance of the tail, thus we should take the minimum
+      val beta = num_tail_iterations / num_iterations.min(head_empirical_var / (head_empirical_var + tail_empirical_var))
+      (1 - beta) * head_contrast + beta * tail_contrast
     }
+  }
+
+  def get_dim_slice_size_dict(m: PreprocessedData, groups_of_dims: Set[Set[Int]]): Map[Int, Int] = {
+    groups_of_dims.flatten.map(d => {
+      val dims_to_slice = groups_of_dims.filter(g => !g.contains(d)).flatten
+      d -> get_slice_size_without_ref_dim(dims_to_slice, m.num_obs)
+    }) toMap
+  }
+
+  def get_dim_slice_dims_dict(groups_of_dims: Set[Set[Int]]): Map[Int, Set[Int]] = {
+    groups_of_dims.flatten.map(d => {
+      d -> groups_of_dims.filter(g => !g.contains(d)).flatten
+    }) toMap
   }
 
   /**
@@ -434,103 +370,86 @@ trait McdeStats {
    * computes the dependencies between groups of dimensions.
    * It uses "ItGI" internally.
    */
+  def generalized_contrast(m: PreprocessedData, groups_of_dims: Set[Set[Int]], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+    val dims_vec = groups_of_dims.flatten.toVector
+    val dims_set = groups_of_dims.flatten
+    val num_dims = dims_set.size
+    val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
-  def generalized_contrast(m: PreprocessedData, groups_of_dims: Set[Set[Int]], MC_num: Int = M)(slice_technique: String = "c"): Double = {
-    if (MC_num == 0) -1 else {
-      // Set(Set(0,1), Set(2,3), Set(4,5,6))
+    val dim_ss_dict = get_dim_slice_size_dict(m, groups_of_dims)
+    val dim_sdims_dict = get_dim_slice_dims_dict(groups_of_dims)
 
-      // Vector(0,1,2,3,4,5,6)
-      val dim_vec = groups_of_dims.flatten.toVector
-
-      val num_dims = dim_vec.size
-
-      val dim_slice_size_dict = dim_vec.map(d => {
-        val num_dims_to_slice = groups_of_dims.filter(g => !g.contains(d)).flatten.size
-        d -> (math.pow(alpha, 1.0 / num_dims_to_slice) * m.num_obs).ceil.toInt
-      }) toMap
-
-      // Map(0 -> Set(5, 6, 2, 3, 4), 5 -> Set(0, 1, 2, 3), 1 -> Set(5, 6, 2, 3, 4),
-      // 6 -> Set(0, 1, 2, 3), 2 -> Set(0, 5, 1, 6, 4), 3 -> Set(0, 5, 1, 6, 4), 4 -> Set(0, 1, 2, 3))
-      val dim_slice_dimensions_dict = dim_vec.map(d => {
-        d -> groups_of_dims.filter(g => !g.contains(d)).flatten
-      }) toMap
-
-      // for example 50 MC iterations with 8 dimensions: 50/8 = 6 head iterations
-      val head_great_iteration_num: Int = MC_num / num_dims
-      // 6*8 = 48 small MC iterations
-      val head_MC_number: Int = head_great_iteration_num * num_dims
-      // tail MC number is then 50 - 48 = 2
-      val tail_MC_number: Int = MC_num - head_MC_number
-
-      val head_influence_vec: Vector[Double] = if (head_MC_number >= 1) {
+    def get_itv_ref_dim_pairs_by_I_inner(num_great_iterations: Int): Vector[(Double, Int)] = {
+      val num_total_iterations = num_great_iterations * num_dims
+      val itv_ref_dim_pairs = {
         if (parallelize == 0) {
-          (1 to head_MC_number).map(i => {
-            val referenceDim = dim_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_without_ref_dim(dim_slice_dimensions_dict(referenceDim), dim_slice_size_dict(referenceDim))(slice_technique))
+          val range = get_range(num_total_iterations)
+          range.map(k => {
+            val ref_dim = dims_vec(k % num_dims)
+            val ss = dim_ss_dict(ref_dim)
+            val sdims = dim_sdims_dict(ref_dim)
+            (twoSample(m, ref_dim, m.slice_without_ref_dim(sdims, ss)(slice_technique)), ref_dim)
           }).toVector
         } else {
-          val iterations = (1 to head_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(i => {
-            val referenceDim = dim_vec((i - 1) % num_dims)
-            twoSample(m, referenceDim, m.slice_without_ref_dim(dim_slice_dimensions_dict(referenceDim), dim_slice_size_dict(referenceDim))(slice_technique))
+          val par_range = get_par_range(num_total_iterations)
+          par_range.map(k => {
+            val ref_dim = dims_vec(k % num_dims)
+            val ss = dim_ss_dict(ref_dim)
+            val sdims = dim_sdims_dict(ref_dim)
+            (twoSample(m, ref_dim, m.slice_without_ref_dim(sdims, ss)(slice_technique)), ref_dim)
           }).toVector
         }
-      } else Vector(0.0) // a dumb variable that will never be used
+      }
+      itv_ref_dim_pairs
+    }
 
-      val head_contrast = if (head_MC_number >= 1) head_influence_vec.sum / head_MC_number else 0
+    def get_itvs_by_I_inner(num_great_iterations: Int): Vector[Double] = {
+      get_itv_ref_dim_pairs_by_I_inner(num_great_iterations).map(x => x._1)
+    }
 
-      val tail_contrast = if (tail_MC_number >= 1) {
-
-        // if head_number = 0 => we have not got information about the influences from each dimension
-        // we simply use dims_vec else, we can analyze the influence vector from the previous iterations
-        // and sort the dim vec by their sum of influences
-        val sorted_dim_vec = if (head_MC_number == 0) dim_vec else {
-          val zipped = head_influence_vec.zipWithIndex
-          (0 until num_dims).map(i => {
-            val selected_vec = zipped.filter(x => x._2 % num_dims == i).map(x => x._1)
-            selected_vec.sum
-          }).zip(dim_vec).sortBy(x => x._1).map(x => x._2).toVector
-        }
-
-        // for example, 7 iterations left, 100 dimensions, then we have
-        // (15,15,14,14,14,14,14), 7 nearly equal size bins
-        val tail_bins_sizes = get_tail_bin_sizes(num_dims, tail_MC_number)
-
-        //(15, 30, 44, 58, 72, 86, 100)
-        val tail_bins_start_index = cumulative_sum(tail_bins_sizes)
-
+    def get_itv_dims_bin_pairs_from_bins_inner(dims_bins: Set[Set[Int]]): Vector[(Double, Set[Int])] = {
+      val itv_dims_bin_pair = {
         if (parallelize == 0) {
-          (0 until tail_MC_number).map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dim_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            // do not forget current_bin_size.toDouble!!!
-            twoSample(m, ref_dim, m.slice_without_ref_dim(dim_slice_dimensions_dict(ref_dim), dim_slice_size_dict(ref_dim))(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
+          val range = dims_bins
+          range.map(bin => {
+            val bin_vec = bin.toVector
+            val ref_dim = get_random_ref_dim(bin_vec)
+            val ss = dim_ss_dict(ref_dim)
+            val sdims = dim_sdims_dict(ref_dim)
+            (twoSample(m, ref_dim, m.slice_without_ref_dim(sdims, ss)(slice_technique)), bin)
+          }).toVector
         } else {
-          val iterations = (0 until tail_MC_number).par
-          if (parallelize > 1) {
-            iterations.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(parallelize))
-          }
-          iterations.map(x => {
-            val current_bin_size = tail_bins_sizes(x)
-            // crucial
-            val dims_in_the_bin = sorted_dim_vec.slice(tail_bins_start_index(x) - current_bin_size, tail_bins_start_index(x))
-            val ref_dim = dims_in_the_bin(scala.util.Random.nextInt(current_bin_size))
-            // do not forget current_bin_size.toDouble!!!
-            twoSample(m, ref_dim, m.slice_without_ref_dim(dim_slice_dimensions_dict(ref_dim), dim_slice_size_dict(ref_dim))(slice_technique)) * (current_bin_size.toDouble / num_dims)
-          }).sum
+          val par_range = dims_bins.par
+          par_range.map(bin => {
+            val bin_vec = bin.toVector
+            val ref_dim = get_random_ref_dim(bin_vec)
+            val ss = dim_ss_dict(ref_dim)
+            val sdims = dim_sdims_dict(ref_dim)
+            (twoSample(m, ref_dim, m.slice_without_ref_dim(sdims, ss)(slice_technique)), bin)
+          }).toVector
         }
-      } else 0
+      }
+      itv_dims_bin_pair
+    }
 
-      val contrast = (head_contrast * head_MC_number + tail_contrast * tail_MC_number) / MC_num
-      contrast
+    def get_itvs_from_bins_inner(dims_bins: Set[Set[Int]]): Vector[Double] = {
+      get_itv_dims_bin_pairs_from_bins_inner(dims_bins).map(x => x._1)
+    }
+
+    if (num_iterations == 0) {
+      -1.0
+    } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
+      get_itvs_by_I_inner(num_head_great_iterations).sum / num_iterations
+    } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
+      val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      get_itvs_from_bins_inner(tail_bins).sum / num_iterations
+    } else {
+      val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I_inner(num_head_great_iterations)
+      val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_itvs = get_itvs_from_bins_inner(tail_bins)
+      (head_itvs.sum + tail_itvs.sum) / num_iterations
     }
   }
-
-
 }
