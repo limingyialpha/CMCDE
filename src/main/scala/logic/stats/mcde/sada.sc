@@ -2,7 +2,7 @@ import io.github.edouardfouche.generators.{Independent, Linear}
 import logic.index.RankIndex
 import logic.stats.mcde.KSP
 
-val dim = 8
+val dim = 2
 val i = Independent(dim, 0, "gaussian", 0).generate(1000)
 val l = Linear(dim, 0.7, "gaussian", 0).generate(1000)
 val m = new RankIndex(l)
