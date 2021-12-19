@@ -347,7 +347,7 @@ trait McdeStats {
       // beta is the Tail estimator balancing weight factor
       // beta = min( (V(Head) / (V(Head) + V(Tail)), num_tail_iterations / num_iterations)
       // For safety, we should not underestimate the variance of the tail, thus we should take the minimum
-      val beta = num_tail_iterations / num_iterations.min(head_empirical_var / (head_empirical_var + tail_empirical_var))
+      val beta = (num_tail_iterations.toDouble / num_iterations).min(head_empirical_var / (head_empirical_var + tail_empirical_var))
       (1 - beta) * head_contrast + beta * tail_contrast
     }
   }
