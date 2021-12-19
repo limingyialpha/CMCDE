@@ -266,7 +266,9 @@ trait McdeStats {
     } else {
       val head_itvs = get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
+      println(tail_bins)
       val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
+      println(tail_itvs)
       (head_itvs.sum + tail_itvs.sum) / num_iterations
     }
   }
@@ -297,7 +299,9 @@ trait McdeStats {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      println(tail_bins)
       val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
+      println(tail_itvs)
       (head_itvs.sum + tail_itvs.sum) / num_iterations
     }
   }
@@ -344,11 +348,17 @@ trait McdeStats {
       val head_empirical_var = dims_set.map(dim => get_empirical_var(Set(dim), head_itv_ref_dim_pairs)).sum * num_head_great_iterations / math.pow(num_head_iterations, 2)
       val tail_empirical_var = tail_bins.map(bin => get_empirical_var(bin, head_itv_ref_dim_pairs) * math.pow(bin.size / num_dims, 2)).sum
 
-      // beta is the Tail estimator balancing weight factor
-      // beta = min( (V(Head) / (V(Head) + V(Tail)), num_tail_iterations / num_iterations)
-      // For safety, we should not underestimate the variance of the tail, thus we should take the minimum
-      val beta = (num_tail_iterations.toDouble / num_iterations).min(head_empirical_var / (head_empirical_var + tail_empirical_var))
-      (1 - beta) * head_contrast + beta * tail_contrast
+      //we deal with perfectly linearly correlation here
+      val contrast = if (head_empirical_var == 0.0 | tail_empirical_var == 0.0) {
+        (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
+      } else {
+        // beta is the Tail estimator balancing weight factor
+        // beta = min( (V(Head) / (V(Head) + V(Tail)), num_tail_iterations / num_iterations)
+        // For safety, we should not underestimate the variance of the tail, thus we should take the minimum
+        val beta = (num_tail_iterations.toDouble / num_iterations).min(head_empirical_var / (head_empirical_var + tail_empirical_var))
+        (1 - beta) * head_contrast + beta * tail_contrast
+      }
+      contrast
     }
   }
 
