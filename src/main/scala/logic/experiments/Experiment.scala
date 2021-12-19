@@ -31,13 +31,13 @@ abstract class Experiment(output_folder: String) extends LazyLogging {
   val master_experiment_folder: String = output_folder concat "/" concat "experiments_output"
   utils.createFolderIfNotExisting(master_experiment_folder)
   val formatter = new java.text.SimpleDateFormat("yyy-MM-dd-HH-mm")
-  val dirname: String = s"${formatter.format(java.util.Calendar.getInstance().getTime)}_${this.getClass.getSimpleName.init}_scala"
+  val dirname: String = s"${formatter.format(java.util.Calendar.getInstance().getTime)}_${this.getClass.getSimpleName}_scala"
   val experiment_folder: String = master_experiment_folder concat "/" concat dirname
-  val summaryPath: String = experiment_folder + "/" + this.getClass.getSimpleName.init + "_scala" + ".csv"
+  val summaryPath: String = experiment_folder + "/" + this.getClass.getSimpleName + "_scala" + ".csv"
 
-  MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}_scala")
+  MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName}_scala")
 
-  info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting the experiment ${this.getClass.getSimpleName.init}\n")
+  info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting the experiment ${this.getClass.getSimpleName}\n")
   utils.createFolderIfNotExisting(experiment_folder)
 
   info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
@@ -46,7 +46,7 @@ abstract class Experiment(output_folder: String) extends LazyLogging {
 
   def info(s: String): Unit = {
     // Repeat the MDC so that we are sure that, even if we are in a subprocess, that the information will be logged centrally
-    MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName.init}_scala")
+    MDC.put("path", s"$experiment_folder/${this.getClass.getSimpleName}_scala")
     logger.info(s)
   }
 
