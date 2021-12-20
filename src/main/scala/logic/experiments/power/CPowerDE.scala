@@ -46,6 +46,7 @@ class CPowerDE(output_folder: String) extends Experiment(output_folder) {
 
   // methodology params
   val power_computation_iteration_num = 2000
+  val benchmark_iteration_num = 40000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
@@ -59,7 +60,7 @@ class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"Dependency measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"iteration number of interest: ${iteration_num_of_interest mkString ","}")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
@@ -68,6 +69,7 @@ class CPowerDE(output_folder: String) extends Experiment(output_folder) {
 
     info(s"Methodology specific params:")
     info(s"number of iterations for power computation: $power_computation_iteration_num")
+    info(s"number of iterations for benchmark: $benchmark_iteration_num")
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
@@ -81,7 +83,7 @@ class CPowerDE(output_folder: String) extends Experiment(output_folder) {
         for (dim <- dimensions_of_interest_sy) {
           info(s"now computing thresholds for estimator $estimator, iteration number: $num_iterations, dimension: $dim")
           val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
-          val independent_benchmark_contrasts = (1 to 20 * power_computation_iteration_num).par.map(_ => {
+          val independent_benchmark_contrasts = (1 to benchmark_iteration_num).par.map(_ => {
             val data = independent_benchmark_instance.generate(observation_num)
             val dims = (0 until dim).toSet
             measure.contrast(data, dims)(estimator, slice_technique)

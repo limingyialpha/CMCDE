@@ -45,7 +45,7 @@ class CCScalabilityD(output_folder: String) extends Experiment(output_folder) {
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"Canonical Correlation measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")

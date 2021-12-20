@@ -47,6 +47,7 @@ class CCPowerM(output_folder: String) extends Experiment(output_folder) {
 
   // methodology specific params
   val power_computation_iteration_num = 500
+  val benchmark_iteration_num = 10000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
@@ -59,7 +60,7 @@ class CCPowerM(output_folder: String) extends Experiment(output_folder) {
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
     info(s"Dependency measure specific params:")
-    info(s"Canonical Correlation measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
@@ -68,6 +69,7 @@ class CCPowerM(output_folder: String) extends Experiment(output_folder) {
 
     info(s"Methodology specific params:")
     info(s"number of iterations for power computation: $power_computation_iteration_num")
+    info(s"number of iterations for benchmark: $benchmark_iteration_num")
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
@@ -80,7 +82,7 @@ class CCPowerM(output_folder: String) extends Experiment(output_folder) {
       for (dim <- dimensions_of_interest) {
         info(s"now computing thresholds for measure: GMCDE, observation number: $obs_num, dimension: $dim")
         val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
-        val independent_benchmark_canonical_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+        val independent_benchmark_canonical_contrasts = (1 to benchmark_iteration_num).par.map(_ => {
           val data = independent_benchmark_instance.generate(obs_num)
           val dim_x = (0 until dim / 2).toSet
           val dim_y = (dim / 2 until dim).toSet

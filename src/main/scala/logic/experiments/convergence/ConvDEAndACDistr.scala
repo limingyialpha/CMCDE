@@ -46,7 +46,7 @@ class ConvDEAndACDistr(output_folder: String) extends Experiment(output_folder) 
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"Dependency measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"maximum interested iteration number: $maximum_interested_iteration_number")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")

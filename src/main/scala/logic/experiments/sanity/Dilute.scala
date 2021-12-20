@@ -34,7 +34,7 @@ class Dilute(output_folder: String) extends Experiment(output_folder) {
     info(s"benchmark: 2 dimensions of 0 to 0.999 with step 0.001")
 
     info(s"Dependency measure specific params:")
-    info(s"Generalized Contrast measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"number of iterations: $iteration_num")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")

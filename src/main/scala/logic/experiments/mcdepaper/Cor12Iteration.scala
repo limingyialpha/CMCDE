@@ -59,7 +59,7 @@ class Cor12Iteration(output_folder: String) extends Experiment(output_folder) {
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
-    info(s"Dependency measure: GMCDE")
+    info(s"Measure: GMCDE")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
     info(s"slice technique: $slice_technique")
