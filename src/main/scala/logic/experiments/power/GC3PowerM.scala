@@ -20,18 +20,18 @@ import breeze.stats.{stddev, mean}
 class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
-//    Linear,
-//    DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
-//    LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
-//    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(1)),
-//    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
-//    Hypercube,
-//    HypercubeGraph,
-//    HyperSphere,
-//    Cross,
-//    Star,
-//    Hourglass,
-//    Zinv,
+    Linear,
+    DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
+    LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
+    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(1)),
+    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
+    Hypercube,
+    HypercubeGraph,
+    HyperSphere,
+    Cross,
+    Star,
+    Hourglass,
+    Zinv,
     Independent
   )
   val dimensions_of_interest = Vector(6, 9, 12, 15)
