@@ -16,8 +16,6 @@
  */
 import java.io.{BufferedWriter, File, FileWriter}
 
-import scala.annotation.tailrec
-
 /**
   * Created by fouchee on 11.07.17.
   */
