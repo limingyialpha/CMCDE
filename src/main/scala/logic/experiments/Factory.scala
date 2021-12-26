@@ -9,10 +9,6 @@ import logic.experiments.sanity.Sanity
 
 object Factory extends LazyLogging {
 
-  val experiments: Vector[String => Experiment] = Vector(
-    Cor12Iteration
-  )
-
   val experiments_dictionary: Map[String, String => Experiment] = Map(
     "ConvDEAndACDistr" -> ConvDEAndACDistr,
     "Cor12Iteration" -> Cor12Iteration,
