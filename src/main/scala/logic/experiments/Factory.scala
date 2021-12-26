@@ -10,14 +10,14 @@ import logic.experiments.sanity.Sanity
 object Factory extends LazyLogging {
 
   val experiments_dictionary: Map[String, String => Experiment] = Map(
-    "ConvDEAndACDistr" -> ConvDEAndACDistr,
+    "Sanity" -> Sanity,
+    "Scalability" -> Scalability,
     "Cor12Iteration" -> Cor12Iteration,
+    "ConvDEAndACDistr" -> ConvDEAndACDistr,
     "CPowerST" -> CPowerST,
     "CPowerDE" -> CPowerDE,
     "CCPowerM" -> CCPowerM,
-    "GC3PowerM" -> GC3PowerM,
-    "Sanity" -> Sanity,
-    "Scalability" -> Scalability
+    "GC3PowerM" -> GC3PowerM
   )
 
   def run(experiment: String, output_folder: String): Unit = {
