@@ -29,7 +29,7 @@ import logic.gmcde.GMCDE
  * 5. alpha 0.5
  * 6. estimator "R"
  */
-class Cor12Iteration(output_folder: String) extends Experiment(output_folder) {
+case class Cor12Iteration(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val dim = 2
   val generators: Vector[DataGenerator] = Vector(

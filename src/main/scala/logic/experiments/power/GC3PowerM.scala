@@ -17,7 +17,7 @@ import breeze.stats.{stddev, mean}
  * We also look at different observation numbers, dimensions, noise levels,
  * symmetric data distributions of all kinds
  */
-class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
+case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,

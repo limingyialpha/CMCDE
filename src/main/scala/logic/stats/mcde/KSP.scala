@@ -10,7 +10,6 @@ import scala.math.{E, pow, sqrt}
  * @param alpha Expected share of instances in slice (independent dimensions).
  *
  */
-//TODO: It would be actually interesting to compare MCDE with a version with the KSP-test AND all the improvements proposed by MCDE
 case class KSP(num_iterations: Int = 50, alpha: Double = 0.5, var parallelize: Int = 0) extends McdeStats {
   type PreprocessedData = RankIndex
   val id = "KSP"
@@ -65,7 +64,6 @@ case class KSP(num_iterations: Int = 50, alpha: Double = 0.5, var parallelize: I
       def infi_exp(k: Int): Double = pow(-1, k-1) * pow(E, 2 * pow(k,2) * pow(D, 2)) // in case lim n1, n2 -> infi
       // we take positive power instead of negative power because it overflows when (n1 >= 3037000499L && n2 >= 3037000499L)
 
-      // TODO: The part inside the summation could be done easily in parallel
       @tailrec
       def loop(sumation: Double, i: Int, end: Int, f: Int => Double): Double = {
         if (i == end) f(i) + sumation

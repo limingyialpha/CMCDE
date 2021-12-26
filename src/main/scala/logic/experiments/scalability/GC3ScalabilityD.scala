@@ -17,7 +17,7 @@ import breeze.stats.mean
  * Each group has equal number of dimensions
  * Observation number is 1000.
  */
-class GC3ScalabilityD(output_folder: String) extends Experiment(output_folder) {
+case class GC3ScalabilityD(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generator: (Int, Double, String, Int) => DataGenerator = Independent
   val noise = 0

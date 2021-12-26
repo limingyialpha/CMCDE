@@ -1,15 +1,9 @@
-import logic.experiments.convergence.ConvDEAndACDistr
-import logic.experiments.mcdepaper.Cor12Iteration
-import logic.experiments.power.{CCPowerM, CPowerDE, CPowerST, GC3PowerM}
-import logic.experiments.scalability.Scalability
-import logic.experiments.sanity.Sanity
+import logic.experiments.Factory
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val output_folder = args(0)
-//    new CCPowerM(output_folder).run()
-//    new GC3PowerM(output_folder).run()
-//    new CPowerST(output_folder).run()
-    new CPowerDE(output_folder).run()
+    val experiment = args(0) //names or "all"
+    val output_folder = args(1)
+    Factory.run(experiment, output_folder)
   }
 }

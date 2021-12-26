@@ -15,7 +15,7 @@ import breeze.stats.mean
  * We look at Independent Uniform distribution.
  * Both first and second groups have 2 dimensions, total 4.
  */
-class CCScalabilityO(output_folder: String) extends Experiment(output_folder) {
+case class CCScalabilityO(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generator: DataGenerator = Independent(4, 0.0, "gaussian", 0)
   val dim_x = Set(0, 1)

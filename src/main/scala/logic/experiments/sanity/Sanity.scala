@@ -2,9 +2,9 @@ package logic.experiments.sanity
 
 import logic.experiments.Experiment
 
-class Sanity(output_folder: String) extends Experiment(output_folder) {
+case class Sanity(output_folder: String) extends Experiment(output_folder) {
   def run(): Unit = {
-    new Dilute(output_folder).run()
-    new Duplicate(output_folder).run()
+    Dilute(output_folder).run()
+    Duplicate(output_folder).run()
   }
 }

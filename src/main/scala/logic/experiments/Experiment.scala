@@ -17,9 +17,7 @@
 package logic.experiments
 
 import com.typesafe.scalalogging.LazyLogging
-import io.github.edouardfouche.generators._
 import org.slf4j.MDC
-import logic.utils.StopWatch
 
 import java.io.{File, FileWriter}
 
