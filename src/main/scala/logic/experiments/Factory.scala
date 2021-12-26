@@ -23,12 +23,13 @@ object Factory extends LazyLogging {
   def run(experiment: String, output_folder: String): Unit = {
     if (experiment == "all") {
       val exp_names = experiments_dictionary.keys.toVector
-      logger.info("Now we are running all the experiments:")
+      logger.info("Now running all the experiments:")
       logger.info(s"${exp_names mkString ","}")
       for (name <- exp_names) {
         val exp = experiments_dictionary(name)
         exp(output_folder).run()
       }
+      logger.info("Finished all experiments.")
     } else if (!experiments_dictionary.keys.toSet.contains(experiment)) {
       throw new RuntimeException("Wrong experiment name!")
     } else {
