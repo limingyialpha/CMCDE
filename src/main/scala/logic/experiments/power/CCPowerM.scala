@@ -5,7 +5,8 @@ import io.github.edouardfouche.generators._
 import logic.data.Utility.round
 import logic.experiments.Experiment
 import logic.gmcde.GMCDE
-import breeze.stats.{stddev, mean}
+import breeze.stats.{mean, stddev}
+import logic.generators.GroupsOfLinears
 
 /**
  * Statistical Power of different Measures for Canonical Correlation
@@ -30,7 +31,8 @@ case class CCPowerM(output_folder: String) extends Experiment(output_folder) {
     Star,
     Hourglass,
     Zinv,
-    Independent
+    Independent,
+    GroupsOfLinears(_: Int, _: Double, _: String, _: Int)(Some(2))
   )
   val dimensions_of_interest = Vector(4, 8, 12, 16)
   val noise_levels = 30

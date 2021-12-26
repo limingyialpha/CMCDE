@@ -5,7 +5,8 @@ import io.github.edouardfouche.generators._
 import logic.data.Utility.round
 import logic.experiments.Experiment
 import logic.gmcde.GMCDE
-import breeze.stats.{stddev, mean}
+import breeze.stats.{mean, stddev}
+import logic.generators.GroupsOfLinears
 
 /**
  * Statistical Power of different Measures for Generalized Contrast with 3 groups of dimensions
@@ -32,7 +33,8 @@ case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
     Star,
     Hourglass,
     Zinv,
-    Independent
+    Independent,
+    GroupsOfLinears(_: Int, _: Double, _: String, _: Int)(Some(3))
   )
   val dimensions_of_interest = Vector(6, 9, 12, 15)
   val noise_levels = 30
