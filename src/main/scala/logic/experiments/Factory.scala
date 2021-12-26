@@ -9,6 +9,17 @@ import logic.experiments.sanity.Sanity
 
 object Factory extends LazyLogging {
 
+  val experiments_names = Vector(
+    "Sanity",
+    "Scalability",
+    "Cor12Iteration",
+    "ConvDEAndACDistr",
+    "CPowerST",
+    "CPowerDE",
+    "CCPowerM",
+    "GC3PowerM"
+  )
+
   val experiments_dictionary: Map[String, String => Experiment] = Map(
     "Sanity" -> Sanity,
     "Scalability" -> Scalability,
@@ -22,15 +33,14 @@ object Factory extends LazyLogging {
 
   def run(experiment: String, output_folder: String): Unit = {
     if (experiment == "all") {
-      val exp_names = experiments_dictionary.keys.toVector
       logger.info("Now running all the experiments:")
-      logger.info(s"${exp_names mkString ","}")
-      for (name <- exp_names) {
+      logger.info(s"${experiments_names mkString ","}")
+      for (name <- experiments_names) {
         val exp = experiments_dictionary(name)
         exp(output_folder).run()
       }
       logger.info("Finished all experiments.")
-    } else if (!experiments_dictionary.keys.toSet.contains(experiment)) {
+    } else if (!experiments_names.contains(experiment)) {
       throw new RuntimeException("Wrong experiment name!")
     } else {
       experiments_dictionary(experiment)(output_folder).run()
