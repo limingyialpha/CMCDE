@@ -11,10 +11,8 @@ import logic.data.Utility.round
 case class DistrAC(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val dimension = 2
-  val benchmark_generator: DataGenerator = Independent(dimension, 0.0, "gaussian", 0)
-  val generator: (Int, Double, String, Int) => DataGenerator = Linear
-  val noise_levels = 30
-  val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
+  val independent_generator: DataGenerator = Independent(dimension, 0.0, "gaussian", 0)
+  val linear_generator: DataGenerator = Linear(dimension, 0.5, "gaussian",0)
   val observation_num = 1000
 
   // GMCDE specific params
@@ -25,15 +23,15 @@ case class DistrAC(output_folder: String) extends Experiment(output_folder) {
   val estimator: String = "R"
 
   // methodology params
-  val repetitions_for_histogram = 5000
+  val repetitions_for_histogram = 10000
+
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    info("we are comparing independent approximated contrast distribution with linear ones")
+    info(s"we are comparing approximated contrast distribution from ${independent_generator.id} and ${linear_generator.id}")
     info(s"dimension: $dimension")
-    info(s"noise levels: $noise_levels")
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
@@ -51,33 +49,43 @@ case class DistrAC(output_folder: String) extends Experiment(output_folder) {
 
     val attributes = List("genId", "iteration_num", "noise", "rep", "contrast")
     val summary = ExperimentSummary(attributes)
+
+    // generating samples for plotting
+    val sample_i = independent_generator.generate(observation_num)
+    val img_path_i = experiment_folder + "/" + "i" + "_scala" + ".csv"
+    utils.saveDataSet(sample_i, img_path_i)
+    val sample_l = Linear(2,0.0,"gaussian",0).generate(observation_num)
+    val img_path_l = experiment_folder + "/" + "l" + "_scala" + ".csv"
+    utils.saveDataSet(sample_l, img_path_l)
+    val sample_l_with_noise = linear_generator.generate(observation_num)
+    val img_path_l_with_noise = experiment_folder + "/" + "l_noise" + "_scala" + ".csv"
+    utils.saveDataSet(sample_l_with_noise, img_path_l_with_noise)
+
+
     // independent case
     info("now starting experiments on independent case:")
     for (num_it <- iteration_numbers_of_interest) {
       info(s"now dealing with iteration number: $num_it.")
       val measure = GMCDE(parallelize, num_it)
       for (rep <- (1 to repetitions_for_histogram).par) {
-        val data = benchmark_generator.generate(observation_num)
+        val data = independent_generator.generate(observation_num)
         val dims = (0 until dimension).toSet
         val contrast = measure.contrast(data, dims)(estimator, slice_technique)
-        val to_write = List(benchmark_generator.id, num_it, 0.0, rep, contrast).mkString(",")
+        val to_write = List(independent_generator.id, num_it, independent_generator.noise, rep, contrast).mkString(",")
         summary.direct_write(summaryPath, to_write)
       }
     }
-    // for comparison
-    info("now starting experiments on linear cases:")
+    // linear 0.5 case
+    info("now starting experiments on linear 0.5 case:")
     for (num_it <- iteration_numbers_of_interest) {
       info(s"now dealing with iteration number: $num_it.")
       val measure = GMCDE(parallelize, num_it)
-      for (noise <- noises_of_interest.par) {
-        val gen = generator(dimension, noise, "gaussian", 0)
-        for (rep <- (1 to repetitions_for_histogram).par) {
-          val data = gen.generate(observation_num)
-          val dims = (0 until dimension).toSet
-          val contrast = measure.contrast(data, dims)(estimator, slice_technique)
-          val to_write = List(gen.id, num_it, noise, rep, contrast).mkString(",")
-          summary.direct_write(summaryPath, to_write)
-        }
+      for (rep <- (1 to repetitions_for_histogram).par) {
+        val data = linear_generator.generate(observation_num)
+        val dims = (0 until dimension).toSet
+        val contrast = measure.contrast(data, dims)(estimator, slice_technique)
+        val to_write = List(linear_generator.id, num_it, linear_generator.noise, rep, contrast).mkString(",")
+        summary.direct_write(summaryPath, to_write)
       }
     }
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Finished experiments - ${this.getClass.getSimpleName}")
