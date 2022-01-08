@@ -24,8 +24,8 @@ package object utils {
   def saveDataSet[T](res: Array[Array[T]], path: String): Unit = {
     val file = new File(path)
     val bw = new BufferedWriter(new FileWriter(file))
-    bw.write(s"${(1 to res(0).length) mkString ","} \n") // a little header
-    res.foreach(x => bw.write(s"${x mkString ","} \n"))
+    bw.write(s"${(1 to res(0).length) mkString ","}\n") // a little header
+    res.foreach(x => bw.write(s"${x mkString ","}\n"))
     bw.close()
   }
 
