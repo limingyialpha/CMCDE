@@ -25,7 +25,7 @@ case class DistrAC(output_folder: String) extends Experiment(output_folder) {
   val estimator: String = "R"
 
   // methodology params
-  val repetitions_for_histogram = 500
+  val repetitions_for_histogram = 5000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
