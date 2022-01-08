@@ -70,11 +70,12 @@ case class DistrAC(output_folder: String) extends Experiment(output_folder) {
       info(s"now dealing with iteration number: $num_it.")
       val measure = GMCDE(parallelize, num_it)
       for (noise <- noises_of_interest.par) {
+        val gen = generator(dimension, noise, "gaussian", 0)
         for (rep <- (1 to repetitions_for_histogram).par) {
-          val data = generator(dimension, noise, "gaussian", 0).generate(observation_num)
+          val data = gen.generate(observation_num)
           val dims = (0 until dimension).toSet
           val contrast = measure.contrast(data, dims)(estimator, slice_technique)
-          val to_write = List(benchmark_generator.id, num_it, noise, rep, contrast).mkString(",")
+          val to_write = List(gen.id, num_it, noise, rep, contrast).mkString(",")
           summary.direct_write(summaryPath, to_write)
         }
       }
