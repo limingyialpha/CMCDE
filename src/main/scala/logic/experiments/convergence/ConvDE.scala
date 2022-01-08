@@ -13,7 +13,7 @@ import logic.utils.StopWatch
  * with respect to iteration numbers.
  * We also look at the approximated contrast distribution with respect to iteration numbers
  */
-case class ConvDEAndACDistr(output_folder: String) extends Experiment(output_folder) {
+case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Independent,
