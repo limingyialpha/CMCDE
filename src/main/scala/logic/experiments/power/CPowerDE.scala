@@ -42,7 +42,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
-  val estimators_of_interest: Array[String] = Array("R", "ItGR", "ItGI", "ItGIBEV")
+  val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
   val power_computation_iteration_num = 2000
