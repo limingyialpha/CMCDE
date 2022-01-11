@@ -163,10 +163,6 @@ trait McdeStats {
     itv_dims_bin_pair
   }
 
-  def get_itvs_from_bins(m: PreprocessedData, dims_bins: Set[Set[Int]])(slice_technique: String = "c"): Vector[Double] = {
-    get_itv_dims_bin_pairs_from_bins(m, dims_bins)(slice_technique).map(x => x._1)
-  }
-
   def get_tail_bins(dims_set: Set[Int], num_tail_iterations: Int): Set[Set[Int]] = {
     val num_dims = dims_set.size
     val dims_vec = dims_set.toVector
@@ -254,6 +250,7 @@ trait McdeStats {
   def contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
     val num_dims = dims_set.size
     val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
     val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
     if (num_iterations == 0) {
@@ -262,12 +259,15 @@ trait McdeStats {
       get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
     } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
-      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
     } else {
       val head_itvs = get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
+      val head_contrast = head_itvs.sum / num_head_iterations
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
-      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
-      (head_itvs.sum + tail_itvs.sum) / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+      (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
     }
   }
 
@@ -284,6 +284,7 @@ trait McdeStats {
   def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
     val num_dims = dims_set.size
     val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
     val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
     if (num_iterations == 0) {
@@ -292,13 +293,16 @@ trait McdeStats {
       get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
     } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
-      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
     } else {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val head_contrast = head_itvs.sum / num_head_iterations
       val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
-      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
-      (head_itvs.sum + tail_itvs.sum) / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+      (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
     }
   }
 
@@ -325,13 +329,16 @@ trait McdeStats {
       get_itvs_by_I(m, dims_set, num_head_great_iterations)(slice_technique).sum / num_iterations
     } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
-      get_itvs_from_bins(m, tail_bins)(slice_technique).sum / num_iterations
-    } else if (num_head_great_iterations <= 1 & num_tail_iterations != 0) {
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+    } else if (num_head_great_iterations <= 2 & num_tail_iterations != 0) {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val head_contrast = head_itvs.sum / num_head_iterations
       val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
-      val tail_itvs = get_itvs_from_bins(m, tail_bins)(slice_technique)
-      (head_itvs.sum + tail_itvs.sum) / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+      (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
     } else {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
@@ -381,6 +388,7 @@ trait McdeStats {
     val dims_set = groups_of_dims.flatten
     val num_dims = dims_set.size
     val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
+    val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
     val num_tail_iterations = get_num_tail_iterations(num_dims, num_iterations)
 
     val dim_ss_dict = get_dim_slice_size_dict(m, groups_of_dims)
@@ -439,23 +447,22 @@ trait McdeStats {
       itv_dims_bin_pair
     }
 
-    def get_itvs_from_bins_inner(dims_bins: Set[Set[Int]]): Vector[Double] = {
-      get_itv_dims_bin_pairs_from_bins_inner(dims_bins).map(x => x._1)
-    }
-
     if (num_iterations == 0) {
       -1.0
     } else if (num_head_great_iterations != 0 & num_tail_iterations == 0) {
       get_itvs_by_I_inner(num_head_great_iterations).sum / num_iterations
     } else if (num_head_great_iterations == 0 & num_tail_iterations != 0) {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
-      get_itvs_from_bins_inner(tail_bins).sum / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
+      tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
     } else {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I_inner(num_head_great_iterations)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val head_contrast = head_itvs.sum / num_head_iterations
       val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
-      val tail_itvs = get_itvs_from_bins_inner(tail_bins)
-      (head_itvs.sum + tail_itvs.sum) / num_iterations
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+      (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
     }
   }
 }
