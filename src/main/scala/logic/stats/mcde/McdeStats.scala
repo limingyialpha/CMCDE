@@ -31,6 +31,10 @@ trait McdeStats {
    */
   def twoSample(index: PreprocessedData, reference: Int, indexSelection: Array[Boolean]): Double
 
+  def get_value_by_ref_dim(m: PreprocessedData, dims_set: Set[Int], ref_dim: Int)(slice_technique: String = "c"): Double = {
+    val slice_size = get_slice_size_with_ref_dim(dims_set, m.num_obs)
+    twoSample(m, ref_dim, m.slice_with_ref_dim(dims_set, ref_dim, slice_size)(slice_technique))
+  }
 
   /**
    * the factory method for contrast computation by different dependency estimators
@@ -38,8 +42,8 @@ trait McdeStats {
    * "R" => Randomly choosing reference dimensions
    * "ItR" => head: Iterating reference dimensions, Tail: Randomly choosing reference dimensions
    * "ItGR" => head: Iterating reference dimensions, Tail: Grouping dimensions Randomly
-   * "ItGI" => head: Iterating reference dimensions, Tail: Grouping dimensions by tracked Influence
-   * "ItGIBEV" => head: Iterating reference dimensions, Tail: Grouping dimensions by tracked Influence, Balance head and tail with Empirical Variance
+   * "ItGI" => head: Iterating reference dimensions, Tail: Grouping dimensions by tracked Iteration-values
+   * "ItGIBEV" => head: Iterating reference dimensions, Tail: Grouping dimensions by tracked Iteration-values, Balance head and tail with Empirical Variance
    * Implementations and details below and in GMCDE paper.
    */
   def contrast(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(estimator: String = "R", slice_technique: String = "c"): Double = {
@@ -47,8 +51,8 @@ trait McdeStats {
       case "R" => contrast_random_ref_dim(m, dims_set, num_iterations)(slice_technique)
       case "ItR" => contrast_iterate_ref_dim_tail_random(m, dims_set, num_iterations)(slice_technique)
       case "ItGR" => contrast_iterate_ref_dim_tail_group_ref_dim_randomly(m, dims_set, num_iterations)(slice_technique)
-      case "ItGI" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m, dims_set, num_iterations)(slice_technique)
-      case "ItGIBEV" => contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m, dims_set, num_iterations)(slice_technique)
+      case "ItGI" => contrast_iterate_ref_dim_tail_group_ref_dim_by_itvs(m, dims_set, num_iterations)(slice_technique)
+      case "ItGIBEV" => contrast_iterate_ref_dim_tail_group_ref_dim_by_itvs_balance_by_empirical_variance(m, dims_set, num_iterations)(slice_technique)
     }
   }
 
@@ -178,7 +182,7 @@ trait McdeStats {
     }).toSet
   }
 
-  def get_tail_bins_by_influence(dims_set: Set[Int], num_tail_iterations: Int, head_itv_ref_dim_pairs: Vector[(Double, Int)]): Set[Set[Int]] = {
+  def get_tail_bins_by_itvs(dims_set: Set[Int], num_tail_iterations: Int, head_itv_ref_dim_pairs: Vector[(Double, Int)]): Set[Set[Int]] = {
     val num_dims = dims_set.size
 
     val sorted_dims_vec = {
@@ -273,15 +277,15 @@ trait McdeStats {
 
 
   /**
-   * reference dimensions are iterated in the head and the reference dimension-dependent influences are tracked.
-   * In the Tail, we first sort dimensions by their influences in the head.
+   * reference dimensions are iterated in the head and the reference dimension-dependent iteration-values are tracked.
+   * In the Tail, we first sort dimensions by their iteration-values in the head.
    * Then we group dimensions in nearly equal-sized bins with number of bins = number of tail iterations.
    * Then we choose reference dimensions from the bins.
    * We get two estimators from both head and tail, and we balance them with their iteration numbers.
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+  def contrast_iterate_ref_dim_tail_group_ref_dim_by_itvs(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
     val num_dims = dims_set.size
     val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
     val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
@@ -299,7 +303,7 @@ trait McdeStats {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
-      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_bins = get_tail_bins_by_itvs(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
       val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
       (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
@@ -307,17 +311,17 @@ trait McdeStats {
   }
 
   /**
-   * reference dimensions are iterated in the head and the reference dimension-dependent influences are tracked.
-   * In the Tail, we first sort dimensions by their influences in the head.
+   * reference dimensions are iterated in the head and the reference dimension-dependent iteration-values are tracked.
+   * In the Tail, we first sort dimensions by their iteration-values in the head.
    * Then we group dimensions in nearly equal-sized bins with number of bins = number of tail iterations.
    * Then we choose reference dimensions from the bins.
    * We get two estimators from both head and tail.
-   * We compute their empirical variance from the tracked dimension-dependent influences.
+   * We compute their empirical variance from the tracked dimension-dependent iteration-values.
    * We balance them by their empirical variance.
    * 30 dimensions 70 iterations => head = 30 * 2 = 60 iterations, tail = 70 % 30 = 10 iterations
    * or 30 dimensions 20 iterations => head = 0 iteration, tail = 20 % 30 = 20 iterations
    */
-  def contrast_iterate_ref_dim_tail_group_ref_dim_by_influence_balance_by_empirical_variance(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
+  def contrast_iterate_ref_dim_tail_group_ref_dim_by_itvs_balance_by_empirical_variance(m: PreprocessedData, dims_set: Set[Int], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
     val num_dims = dims_set.size
     val num_head_great_iterations = get_num_head_great_iterations(num_dims, num_iterations)
     val num_head_iterations = get_num_head_iterations(num_dims, num_iterations)
@@ -335,7 +339,7 @@ trait McdeStats {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
-      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_bins = get_tail_bins_by_itvs(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
       val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
       (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
@@ -344,7 +348,7 @@ trait McdeStats {
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
 
-      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_bins = get_tail_bins_by_itvs(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
       val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
 
@@ -459,7 +463,7 @@ trait McdeStats {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I_inner(num_head_great_iterations)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
-      val tail_bins = get_tail_bins_by_influence(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_bins = get_tail_bins_by_itvs(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
       val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
       (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations

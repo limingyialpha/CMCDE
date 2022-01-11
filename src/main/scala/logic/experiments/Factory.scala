@@ -2,7 +2,7 @@ package logic.experiments
 
 import com.typesafe.scalalogging.LazyLogging
 import logic.experiments.convergence.ConvDE
-import logic.experiments.distribution.DistrAC
+import logic.experiments.distribution.{DistrAC, DistrIV}
 import logic.experiments.mcdepaper.Cor12Iteration
 import logic.experiments.power.{CCPowerM, CPowerDE, CPowerST, GC3PowerM}
 import logic.experiments.scalability.Scalability
@@ -16,6 +16,7 @@ object Factory extends LazyLogging {
     "Cor12Iteration",
     "ConvDE",
     "DistrAC",
+    "DistrIV",
     "CPowerST",
     "CPowerDE",
     "CCPowerM",
@@ -28,6 +29,7 @@ object Factory extends LazyLogging {
     "Cor12Iteration" -> Cor12Iteration,
     "ConvDE" -> ConvDE,
     "DistrAC" -> DistrAC,
+    "DistrIV" -> DistrIV,
     "CPowerST" -> CPowerST,
     "CPowerDE" -> CPowerDE,
     "CCPowerM" -> CCPowerM,
