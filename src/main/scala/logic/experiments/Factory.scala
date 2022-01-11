@@ -34,19 +34,24 @@ object Factory extends LazyLogging {
     "GC3PowerM" -> GC3PowerM
   )
 
-  def run(experiment: String, output_folder: String): Unit = {
-    if (experiment == "all") {
-      logger.info("Now running all the experiments:")
+  def run(experiments: List[String], output_folder: String): Unit = {
+    if (experiments.isEmpty) {
+      throw new RuntimeException("No experiments given!")
+    } else if (experiments.size == 1 & experiments.head == "all") {
+      logger.info("Now running ALL experiments:")
       logger.info(s"${experiments_names mkString ","}")
       for (name <- experiments_names) {
         val exp = experiments_dictionary(name)
         exp(output_folder).run()
       }
-      logger.info("Finished all experiments.")
-    } else if (!experiments_names.contains(experiment)) {
-      throw new RuntimeException("Wrong experiment name!")
+      logger.info("Finished ALL experiments.")
     } else {
-      experiments_dictionary(experiment)(output_folder).run()
+      val correct = experiments.forall(e => experiments_names.contains(e))
+      if (correct) {
+        for (e <- experiments) {
+          experiments_dictionary(e)(output_folder).run()
+        }
+      } else throw new RuntimeException("Wrong experiment name (names)!")
     }
   }
 }
