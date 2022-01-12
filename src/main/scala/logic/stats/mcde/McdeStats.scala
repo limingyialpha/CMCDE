@@ -359,11 +359,9 @@ trait McdeStats {
       val contrast = if (head_empirical_var == 0.0 | tail_empirical_var == 0.0) {
         (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
       } else {
-        // beta is the Tail estimator balancing weight factor
-        // beta = min( (V(Head) / (V(Head) + V(Tail)), num_tail_iterations / num_iterations)
-        // For safety, we should not underestimate the variance of the tail, thus we should take the minimum
-        val beta = (num_tail_iterations.toDouble / num_iterations).min(head_empirical_var / (head_empirical_var + tail_empirical_var))
-        (1 - beta) * head_contrast + beta * tail_contrast
+        val alpha = (tail_empirical_var / head_empirical_var).max(num_head_iterations.toDouble / num_tail_iterations.toDouble)
+        val q = 1.0 / (1.0 + alpha)
+        (1 - q) * head_contrast + q * tail_contrast
       }
       contrast
     }
