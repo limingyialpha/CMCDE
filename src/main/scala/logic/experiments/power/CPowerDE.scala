@@ -31,8 +31,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     Zinv,
     Independent
   )
-  val dimensions_of_interest_sy: Vector[Int] = (2 to 16).toVector
-  val dimensions_of_interest_asy = Vector(4, 8, 12, 16)
+  val dimensions_of_interest: Vector[Int] = (2 to 16).toVector
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num = 1000
@@ -54,8 +53,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
     info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
-    info(s"dimensions of interest for symmetric datasets: ${dimensions_of_interest_sy mkString ","}")
-    info(s"dimensions of interest for asymmetric datasets: ${dimensions_of_interest_asy mkString ","}")
+    info(s"dimensions of interest for symmetric datasets: ${dimensions_of_interest mkString ","}")
     info(s"noise levels: $noise_levels")
     info(s"observation number: $observation_num")
 
@@ -80,7 +78,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     for (num_iterations <- iteration_num_of_interest) {
       val measure: GMCDE = GMCDE(parallelize, num_iterations)
       for (estimator <- estimators_of_interest) {
-        for (dim <- dimensions_of_interest_sy) {
+        for (dim <- dimensions_of_interest) {
           info(s"now computing thresholds for estimator $estimator, iteration number: $num_iterations, dimension: $dim")
           val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
           val independent_benchmark_contrasts = (1 to benchmark_iteration_num).par.map(_ => {
@@ -113,25 +111,25 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
             }
 
             // asymmetric case
-            if (dim >= dimensions_of_interest_asy(0)) {
-              info(s"now dealing with gens: asymmetric, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
-              for (gen <- generators.par) {
-                val generator_instance = gen(dim / 2, noise, "gaussian", 0)
-                val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
-                  val data_sy = generator_instance.generate(observation_num)
-                  val data_asy = Independent(dim / 2, 0, "gaussian", 0).generate(observation_num)
-                  val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
-                  val dims = (0 until dim).toSet
-                  measure.contrast(data, dims)(estimator, slice_technique)
-                }).toVector
-                val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
-                val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
-                val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
-                val avg_cc = mean(comparison_contrasts)
-                val std_cc = stddev(comparison_contrasts)
-                val to_write = List(generator_instance.id, "asy", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
-                summary.direct_write(summaryPath, to_write)
-              }
+            val dim_ind = dim / 2
+            val dim_data = dim - dim_ind
+            info(s"now dealing with gens: asymmetric, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
+            for (gen <- generators.par) {
+              val generator_instance = gen(dim_data, noise, "gaussian", 0)
+              val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
+                val data_sy = generator_instance.generate(observation_num)
+                val data_asy = Independent(dim_ind, 0, "gaussian", 0).generate(observation_num)
+                val data = data_sy.zip(data_asy).map(tuple => tuple._1 ++ tuple._2)
+                val dims = (0 until dim).toSet
+                measure.contrast(data, dims)(estimator, slice_technique)
+              }).toVector
+              val power90 = comparison_contrasts.count(c => c > threshold90).toDouble / power_computation_iteration_num.toDouble
+              val power95 = comparison_contrasts.count(c => c > threshold95).toDouble / power_computation_iteration_num.toDouble
+              val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
+              val avg_cc = mean(comparison_contrasts)
+              val std_cc = stddev(comparison_contrasts)
+              val to_write = List(generator_instance.id, "asy", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              summary.direct_write(summaryPath, to_write)
             }
           }
         }
