@@ -14,7 +14,7 @@ import logic.stats.mcde.KSP
 case class DistrIV(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val dimension = 4
-  val generator: DataGenerator = IndependentLinearStripe(dimension, 0.5 , "gaussian", 0)
+  val generator: DataGenerator = IndependentLinearStripe(dimension, 0.5, "gaussian", 0)
   val observation_num = 1000
 
   // GMCDE specific params
