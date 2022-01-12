@@ -31,7 +31,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     Zinv,
     Independent
   )
-  val dimensions_of_interest_sy = Vector(2, 4, 8, 12, 16)
+  val dimensions_of_interest_sy: Vector[Int] = (2 to 16).toVector
   val dimensions_of_interest_asy = Vector(4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
