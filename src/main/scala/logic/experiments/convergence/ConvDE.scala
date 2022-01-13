@@ -32,7 +32,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val repetitions_for_variance_estimation = 5000
+  val repetitions_for_variance_estimation = 500
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
@@ -56,18 +56,20 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
 
     info(s"Started on: ${java.net.InetAddress.getLocalHost.getHostName}")
 
-    val attributes = List("genId", "estimator", "iteration_num", "rep", "contrast", "cpu_time")
+    val attributes = List("genId", "estimator", "iteration_num", "rep", "contrast", "cpu_time", "real_contrast")
     val summary = ExperimentSummary(attributes)
+
     for (gen <- generators) {
+      val data = gen.generate(observation_num)
+      val dims = (0 until dimension).toSet
+      val real_contrast = GMCDE(parallelize, 1000).contrast(data, dims)("R", slice_technique)
       for (estimator <- estimators_of_interest) {
         info(s"now dealing with generator: ${gen.id}, estimator $estimator")
         for (iteration_num <- (1 to maximum_interested_iteration_number).par) {
           val measure = GMCDE(parallelize, iteration_num)
           for (rep <- (1 to repetitions_for_variance_estimation).par) {
-            val data = gen.generate(observation_num)
-            val dims = (0 until dimension).toSet
             val (cpu_time, contrast) = StopWatch.measureCPUTime(measure.contrast(data, dims)(estimator, slice_technique))
-            val to_write = List(gen.id, estimator, iteration_num, rep, contrast, cpu_time).mkString(",")
+            val to_write = List(gen.id, estimator, iteration_num, rep, contrast, cpu_time, real_contrast).mkString(",")
             summary.direct_write(summaryPath, to_write)
           }
         }
