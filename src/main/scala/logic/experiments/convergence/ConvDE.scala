@@ -15,14 +15,13 @@ import logic.utils.StopWatch
  */
 case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   // data specific params
-  val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
-    Independent,
-    Linear,
-    Hypercube,
-    IndependentLinearStripe
-  )
   val dimension = 10
-  val noise = 0.2
+  val generators: Vector[DataGenerator] = Vector(
+    Independent(dimension,0.0,"gaussian",0),
+    Linear(dimension, 0.4, "gaussian", 0),
+    Hypercube(dimension, 0.2, "gaussian", 0),
+    IndependentLinearStripe(dimension, 0.2, "gaussian", 0)
+  )
   val observation_num = 1000
 
   // GMCDE specific params
@@ -33,16 +32,15 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val repetitions_for_variance_estimation = 500
+  val repetitions_for_variance_estimation = 5000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
-    info(s"generators of interest for convergence analysis: ${gen_names mkString ","}")
+    val gen_ids = generators.map(g => g.id)
+    info(s"generators of interest for convergence analysis: ${gen_ids mkString ","}")
     info(s"dimension: $dimension")
-    info(s"noise $noise")
     info(s"observation number: $observation_num")
 
     info(s"Dependency measure specific params:")
@@ -61,16 +59,15 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
     val attributes = List("genId", "estimator", "iteration_num", "rep", "contrast", "cpu_time")
     val summary = ExperimentSummary(attributes)
     for (gen <- generators) {
-      val gen_ins = gen(dimension, noise, "gaussian", 0)
       for (estimator <- estimators_of_interest) {
-        info(s"now dealing with generator: ${gen_ins.id}, estimator $estimator")
+        info(s"now dealing with generator: ${gen.id}, estimator $estimator")
         for (iteration_num <- (1 to maximum_interested_iteration_number).par) {
           val measure = GMCDE(parallelize, iteration_num)
           for (rep <- (1 to repetitions_for_variance_estimation).par) {
-            val data = gen_ins.generate(observation_num)
+            val data = gen.generate(observation_num)
             val dims = (0 until dimension).toSet
             val (cpu_time, contrast) = StopWatch.measureCPUTime(measure.contrast(data, dims)(estimator, slice_technique))
-            val to_write = List(gen_ins.id, estimator, iteration_num, rep, contrast, cpu_time).mkString(",")
+            val to_write = List(gen.id, estimator, iteration_num, rep, contrast, cpu_time).mkString(",")
             summary.direct_write(summaryPath, to_write)
           }
         }
