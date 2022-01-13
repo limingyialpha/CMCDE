@@ -32,7 +32,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val repetitions_for_variance_estimation = 500
+  val repetitions_for_variance_estimation = 5000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
