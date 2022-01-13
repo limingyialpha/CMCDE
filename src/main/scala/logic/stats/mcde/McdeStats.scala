@@ -335,7 +335,7 @@ trait McdeStats {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins(m, tail_bins)(slice_technique)
       tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
-    } else if (num_head_great_iterations <= 2 & num_tail_iterations != 0) {
+    } else if (num_head_great_iterations <= 2) {
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I(m, dims_set, num_head_great_iterations)(slice_technique)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
