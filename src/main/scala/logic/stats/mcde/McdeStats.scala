@@ -5,6 +5,7 @@ import logic.index.Index
 import logic.data.Utility.cumulative_sum
 
 import scala.collection.parallel.immutable.ParRange
+import scala.util.Random
 
 // breeze.stats.variance computes the empirical variance
 import breeze.stats.variance
@@ -169,7 +170,7 @@ trait McdeStats {
 
   def get_tail_bins(dims_set: Set[Int], num_tail_iterations: Int): Set[Set[Int]] = {
     val num_dims = dims_set.size
-    val dims_vec = dims_set.toVector
+    val dims_vec = Random.shuffle(dims_set.toVector)
 
     val tail_bins_sizes = (0 until num_tail_iterations).map(x => {
       val overflow = if (x < num_dims % num_tail_iterations) 1 else 0
