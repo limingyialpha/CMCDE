@@ -43,8 +43,8 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val power_computation_iteration_num = 10000
-  val benchmark_iteration_num = 40000
+  val power_computation_iteration_num = 40000
+  val benchmark_iteration_num = 80000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
