@@ -18,7 +18,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val dimension = 10
   val generators: Vector[DataGenerator] = Vector(
     Independent(dimension,0.0,"gaussian",0),
-//    Linear(dimension, 0.4, "gaussian", 0),
+    Linear(dimension, 0.4, "gaussian", 0),
 //    Hypercube(dimension, 0.2, "gaussian", 0),
     IndependentLinearStripe(dimension, 0.2, "gaussian", 0)
   )
