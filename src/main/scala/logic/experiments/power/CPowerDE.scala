@@ -18,20 +18,19 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   // data params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
-    DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
-    LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
+    //DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
+    //LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
     Sine(_: Int, _: Double, _: String, _: Int)(period = Some(1)),
-    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
-    Hypercube,
-    HypercubeGraph,
+    //Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
+    //Hypercube,
+    //HypercubeGraph,
     HyperSphere,
-    Cross,
+    //Cross,
     Star,
-    Hourglass,
-    Zinv,
-    Independent
+    //Hourglass,
+    //Zinv,
   )
-  val dimensions_of_interest: Vector[Int] = (2 to 16).toVector
+  val dimensions_of_interest: Vector[Int] = Vector(4,6,8,10,12,14)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num = 1000
@@ -44,7 +43,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val power_computation_iteration_num = 2000
+  val power_computation_iteration_num = 10000
   val benchmark_iteration_num = 40000
 
   def run(): Unit = {
