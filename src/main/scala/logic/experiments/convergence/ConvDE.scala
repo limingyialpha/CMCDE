@@ -18,9 +18,9 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val dimension = 10
   val generators: Vector[DataGenerator] = Vector(
     //Independent(dimension,0.0,"gaussian",0),
-    //Linear(dimension, 0.4, "gaussian", 0),
-//    Hypercube(dimension, 0.2, "gaussian", 0),
-    IndependentLinearStripe(dimension, 0.2, "gaussian", 0)
+    Linear(dimension, 0.4, "gaussian", 0),
+//  Hypercube(dimension, 0.2, "gaussian", 0),
+    //IndependentLinearStripe(dimension, 0.2, "gaussian", 0)
   )
   val observation_num = 1000
 
@@ -32,7 +32,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
 
   // methodology params
-  val repetitions_for_variance_estimation = 30000
+  val repetitions_for_variance_estimation = 40000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
