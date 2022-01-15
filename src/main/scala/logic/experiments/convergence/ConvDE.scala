@@ -25,7 +25,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val observation_num = 1000
 
   // GMCDE specific params
-  val maximum_interested_iteration_number = 100
+  val interested_iteration_numbers: Vector[Int] = (30 until 100).toVector
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
@@ -45,7 +45,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
 
     info(s"Dependency measure specific params:")
     info(s"Measure: GMCDE")
-    info(s"maximum interested iteration number: $maximum_interested_iteration_number")
+    info(s"interested iteration numbers: ${interested_iteration_numbers.head} to ${interested_iteration_numbers.tail}")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
     info(s"slice technique: $slice_technique")
@@ -65,7 +65,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
       val real_contrast = GMCDE(parallelize, 1000).contrast(data, dims)("R", slice_technique)
       for (estimator <- estimators_of_interest) {
         info(s"now dealing with generator: ${gen.id}, estimator $estimator")
-        for (iteration_num <- (1 to maximum_interested_iteration_number).par) {
+        for (iteration_num <- interested_iteration_numbers) {
           val measure = GMCDE(parallelize, iteration_num)
           for (rep <- (1 to repetitions_for_variance_estimation).par) {
             val (cpu_time, contrast) = StopWatch.measureCPUTime(measure.contrast(data, dims)(estimator, slice_technique))
