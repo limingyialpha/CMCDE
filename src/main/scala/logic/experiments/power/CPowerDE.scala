@@ -18,17 +18,17 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   // data params
   val generators: Vector[(Int, Double, String, Int) => DataGenerator] = Vector(
     Linear,
-    //DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
-    //LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
+    DoubleLinear(_: Int, _: Double, _: String, _: Int)(Some(0.25)),
+    LinearPeriodic(_: Int, _: Double, _: String, _: Int)(period = Some(2)),
     Sine(_: Int, _: Double, _: String, _: Int)(period = Some(1)),
-    //Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
-    //Hypercube,
-    //HypercubeGraph,
+    Sine(_: Int, _: Double, _: String, _: Int)(period = Some(5)),
+    Hypercube,
+    HypercubeGraph,
     HyperSphere,
-    //Cross,
+    Cross,
     Star,
-    //Hourglass,
-    //Zinv,
+    Hourglass,
+    Zinv,
   )
   val dimensions_of_interest: Vector[Int] = Vector(4,6,8,10,12,14,16)
   val noise_levels = 30
