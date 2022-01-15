@@ -458,7 +458,7 @@ trait McdeStats {
       val tail_bins = get_tail_bins(dims_set, num_tail_iterations)
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
       tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
-    } else {
+    } else if (num_head_great_iterations <= 2){
       val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I_inner(num_head_great_iterations)
       val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
       val head_contrast = head_itvs.sum / num_head_iterations
@@ -466,6 +466,27 @@ trait McdeStats {
       val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
       val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
       (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
+    } else {
+      val head_itv_ref_dim_pairs = get_itv_ref_dim_pairs_by_I_inner(num_head_great_iterations)
+      val head_itvs = head_itv_ref_dim_pairs.map(x => x._1)
+      val head_contrast = head_itvs.sum / num_head_iterations
+
+      val tail_bins = get_tail_bins_by_itvs(dims_set, num_tail_iterations, head_itv_ref_dim_pairs)
+      val tail_itv_dims_bin_pairs = get_itv_dims_bin_pairs_from_bins_inner(tail_bins)
+      val tail_contrast = tail_itv_dims_bin_pairs.map(pair => pair._1 * pair._2.size / num_dims).sum
+
+      val head_empirical_var = dims_set.map(dim => get_empirical_var(Set(dim), head_itv_ref_dim_pairs)).sum * num_head_great_iterations / math.pow(num_head_iterations, 2)
+      val tail_empirical_var = tail_bins.map(bin => get_empirical_var(bin, head_itv_ref_dim_pairs) * math.pow(bin.size / num_dims, 2)).sum
+
+      //we deal with perfectly linearly correlation here
+      val contrast = if (head_empirical_var == 0.0 | tail_empirical_var == 0.0) {
+        (head_contrast * num_head_iterations + tail_contrast * num_tail_iterations) / num_iterations
+      } else {
+        val alpha = (tail_empirical_var / head_empirical_var).max(num_head_iterations.toDouble / num_tail_iterations.toDouble)
+        val q = 1.0 / (1.0 + alpha)
+        (1 - q) * head_contrast + q * tail_contrast
+      }
+      contrast
     }
   }
 }

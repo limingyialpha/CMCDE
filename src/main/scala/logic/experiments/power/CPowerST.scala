@@ -12,7 +12,7 @@ import breeze.stats.{mean, stddev}
  *
  * Compare the power of MCDE in contrast with different slice techniques.
  * We also look at different observation numbers, dimensions, noise levels,
- * symmetric/asymmetric data distributions of all kinds
+ * undiluted/diluted data distributions of all kinds
  */
 case class CPowerST(output_folder: String) extends Experiment(output_folder) {
   // data params
@@ -31,8 +31,8 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
     Zinv,
     Independent
   )
-  val dimensions_of_interest_sy = Vector(2, 4, 8, 12, 16)
-  val dimensions_of_interest_asy = Vector(4, 8, 12, 16)
+  val dimensions_of_interest_undiluted = Vector(2, 4, 8, 12, 16)
+  val dimensions_of_interest_diluted = Vector(4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num_of_interest = Vector(100, 1000)
@@ -56,10 +56,10 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
 
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
-    info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
+    info(s"generators of interest for both undiluted and diluted distributions : ${gen_names mkString ","}")
 
-    info(s"dimensions of interest for symmetric datasets: ${dimensions_of_interest_sy mkString ","}")
-    info(s"dimensions of interest for asymmetric datasets: ${dimensions_of_interest_asy mkString ","}")
+    info(s"dimensions of interest for undiluted datasets: ${dimensions_of_interest_undiluted mkString ","}")
+    info(s"dimensions of interest for diluted datasets: ${dimensions_of_interest_diluted mkString ","}")
     info(s"noise levels: $noise_levels")
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
 
@@ -84,7 +84,7 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
 
     for (slice_technique <- slice_techniques_of_interest) {
       for (obs_num <- observation_num_of_interest) {
-        for (dim <- dimensions_of_interest_sy) {
+        for (dim <- dimensions_of_interest_undiluted) {
           info(s"now computing thresholds for slice technique $slice_technique, observation number: $obs_num, dimension: $dim")
           val independent_benchmark_instance = Independent(dim, 0, "gaussian", 0)
           val independent_benchmark_contrasts = (1 to benchmark_iteration_num).par.map(_ => {
@@ -98,8 +98,8 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
           info(s"finished computing thresholds for slice technique $slice_technique, observation number: $obs_num, dimension: $dim")
 
           for (noise <- noises_of_interest.par) {
-            info(s"now dealing with gens: symmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
-            // symmetric case
+            // undiluted case
+            info(s"now dealing with gens: undiluted, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
             for (gen <- generators.par) {
               val generator_instance = gen(dim, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
@@ -112,13 +112,13 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
               val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
               val avg_cc = mean(comparison_contrasts)
               val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id, "sy", dim, noise, obs_num, slice_technique, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              val to_write = List(generator_instance.id, "undiluted", dim, noise, obs_num, slice_technique, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
 
-            // asymmetric case
-            if (dim >= dimensions_of_interest_asy(0)) {
-              info(s"now dealing with gens: asymmetric, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
+            // diluted case
+            if (dim >= dimensions_of_interest_diluted(0)) {
+              info(s"now dealing with gens: diluted, slice technique $slice_technique, observation number: $obs_num, dimension: $dim, noise $noise")
               for (gen <- generators.par) {
                 val generator_instance = gen(dim / 2, noise, "gaussian", 0)
                 val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
@@ -133,7 +133,7 @@ case class CPowerST(output_folder: String) extends Experiment(output_folder) {
                 val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
                 val avg_cc = mean(comparison_contrasts)
                 val std_cc = stddev(comparison_contrasts)
-                val to_write = List(generator_instance.id, "asy", dim, noise, obs_num, slice_technique, avg_cc, std_cc, power90, power95, power99).mkString(",")
+                val to_write = List(generator_instance.id, "diluted", dim, noise, obs_num, slice_technique, avg_cc, std_cc, power90, power95, power99).mkString(",")
                 summary.direct_write(summaryPath, to_write)
               }
             }

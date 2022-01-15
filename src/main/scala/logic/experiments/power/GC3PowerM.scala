@@ -16,7 +16,7 @@ import logic.generators.GroupsOfLinears
  * Dependency between 3 groups of dimensions.
  * Other competitors are implemented in Python. See partner Repo.
  * We also look at different observation numbers, dimensions, noise levels,
- * symmetric data distributions of all kinds
+ * undiluted data distributions of all kinds
  */
 case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
   // data specific params
@@ -59,7 +59,7 @@ case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
 
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
-    info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
+    info(s"generators of interest for distributions : ${gen_names mkString ","}")
     info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
     info(s"noise levels: $noise_levels")
     info(s"observation numbers of interest: ${observation_num_of_interest mkString ","}")
@@ -101,8 +101,8 @@ case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
         info(s"finished computing thresholds for measure: GMCDE, observation number: $obs_num, dimension: $dim")
 
         for (noise <- noises_of_interest.par) {
-          info(s"now dealing with gens: symmetric, measure: GMCDE, observation number: $obs_num, dimension: $dim, noise $noise")
-          // symmetric case
+          info(s"now dealing with gens: undiluted, measure: GMCDE, observation number: $obs_num, dimension: $dim, noise $noise")
+          // undiluted case
           for (gen <- generators.par) {
             val generator_instance = gen(dim, noise, "gaussian", 0)
             val comparison_generalized_contrasts = (1 to power_computation_iteration_num).par.map(_ => {

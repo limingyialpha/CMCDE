@@ -12,7 +12,7 @@ import breeze.stats.{mean, stddev}
  *
  * Compare the power of MCDE in contrast with different dependency estimators.
  * We also look at different observation numbers, dimensions, noise levels,
- * symmetric/asymmetric data distributions of all kinds
+ * undiluted/diluted data distributions of all kinds
  */
 case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   // data params
@@ -51,8 +51,8 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
 
     info("Data specific params:")
     val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
-    info(s"generators of interest for both symmetric and asymmetric distributions : ${gen_names mkString ","}")
-    info(s"dimensions of interest for symmetric datasets: ${dimensions_of_interest mkString ","}")
+    info(s"generators of interest for both undiluted and diluted distributions : ${gen_names mkString ","}")
+    info(s"dimensions of interest for: ${dimensions_of_interest mkString ","}")
     info(s"noise levels: $noise_levels")
     info(s"observation number: $observation_num")
 
@@ -91,8 +91,8 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
           info(s"finished computing thresholds for estimator $estimator, iteration number: $num_iterations, dimension: $dim")
 
           for (noise <- noises_of_interest.par) {
-            info(s"now dealing with gens: symmetric, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
-            // symmetric case
+            info(s"now dealing with gens: undiluted, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
+            // undiluted case
             for (gen <- generators.par) {
               val generator_instance = gen(dim, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
@@ -105,14 +105,14 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
               val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
               val avg_cc = mean(comparison_contrasts)
               val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id, "sy", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              val to_write = List(generator_instance.id, "undiluted", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
 
-            // asymmetric case
+            // diluted case
             val dim_ind = dim / 2
             val dim_data = dim - dim_ind
-            info(s"now dealing with gens: asymmetric, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
+            info(s"now dealing with gens: diluted, estimator $estimator, iteration number: $num_iterations, dimension: $dim, noise $noise")
             for (gen <- generators.par) {
               val generator_instance = gen(dim_data, noise, "gaussian", 0)
               val comparison_contrasts = (1 to power_computation_iteration_num).par.map(_ => {
@@ -127,7 +127,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
               val power99 = comparison_contrasts.count(c => c > threshold99).toDouble / power_computation_iteration_num.toDouble
               val avg_cc = mean(comparison_contrasts)
               val std_cc = stddev(comparison_contrasts)
-              val to_write = List(generator_instance.id, "asy", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
+              val to_write = List(generator_instance.id, "diluted", dim, noise, num_iterations, estimator, avg_cc, std_cc, power90, power95, power99).mkString(",")
               summary.direct_write(summaryPath, to_write)
             }
           }
