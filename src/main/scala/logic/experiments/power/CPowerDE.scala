@@ -30,7 +30,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
     //Hourglass,
     //Zinv,
   )
-  val dimensions_of_interest: Vector[Int] = Vector(4,6,8,10,12,14)
+  val dimensions_of_interest: Vector[Int] = Vector(4,6,8,10,12,14,16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
   val observation_num = 1000
@@ -40,11 +40,11 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
-  val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
+  val estimators_of_interest: Array[String] = Array("R","ItGIBEV")
 
   // methodology params
-  val power_computation_iteration_num = 40000
-  val benchmark_iteration_num = 80000
+  val power_computation_iteration_num = 20000
+  val benchmark_iteration_num = 40000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
