@@ -43,7 +43,7 @@ case class CPowerDE(output_folder: String) extends Experiment(output_folder) {
   val estimators_of_interest: Array[String] = Array("R","ItGIBEV")
 
   // methodology params
-  val power_computation_iteration_num = 20000
+  val power_computation_iteration_num = 10000
   val benchmark_iteration_num = 40000
 
   def run(): Unit = {
