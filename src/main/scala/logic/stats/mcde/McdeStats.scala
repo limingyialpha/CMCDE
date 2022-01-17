@@ -384,7 +384,7 @@ trait McdeStats {
   /**
    * The generalize contrast, the core dependency estimator in GMCDE.
    * computes the dependencies between groups of dimensions.
-   * It uses "ItGI" internally.
+   * It uses "ItGIBEV" internally.
    */
   def generalized_contrast(m: PreprocessedData, groups_of_dims: Set[Set[Int]], num_iterations: Int = num_iterations)(slice_technique: String = "c"): Double = {
     val dims_vec = groups_of_dims.flatten.toVector
