@@ -58,7 +58,7 @@ case class GC3PowerM(output_folder: String) extends Experiment(output_folder) {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
 
     info("Data specific params:")
-    val gen_names = generators.map(g => g(2, 0.0, "gaussian", 0).name)
+    val gen_names = generators.map(g => g(3, 0.0, "gaussian", 0).name)
     info(s"generators of interest for distributions : ${gen_names mkString ","}")
     info(s"dimensions of interest: ${dimensions_of_interest mkString ","}")
     info(s"noise levels: $noise_levels")
