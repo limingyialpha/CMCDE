@@ -43,7 +43,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
 
     info(s"Dependency measure specific params:")
     info(s"Measure: GMCDE")
-    info(s"interested iteration numbers: ${interested_iteration_numbers.head} to ${interested_iteration_numbers.tail}")
+    info(s"interested iteration numbers: ${interested_iteration_numbers.head} to ${interested_iteration_numbers.last}")
     info(s"parallelization level in GMCDE: $parallelize")
     info(s"expected share of instances in slice, alpha: $alpha")
     info(s"slice technique: $slice_technique")
