@@ -7,17 +7,15 @@ import logic.gmcde.GMCDE
 import logic.utils.StopWatch
 
 /**
- * Convergence of different Dependency Estimators
+ * Convergence of ItGI and ItGIBEV on diluted data set
  *
- * We look at the variance and runtime of approximated contrast of different estimators,
+ * We look at the variance and runtime of approximated contrast of ItGI and ItGIBEV
  * with respect to iteration numbers.
  */
-case class ConvDE(output_folder: String) extends Experiment(output_folder) {
+case class ConvBEV(output_folder: String) extends Experiment(output_folder) {
   // data specific params
   val dimension = 10
   val generators: Vector[DataGenerator] = Vector(
-    Independent(dimension,0.0,"gaussian",0),
-    Linear(dimension, 0.4, "gaussian", 0),
     IndependentLinearStripe(dimension, 0.2, "gaussian", 0)
   )
   val observation_num = 1000
@@ -27,10 +25,10 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
-  val estimators_of_interest: Array[String] = Array("R", "ItR", "ItGR", "ItGI", "ItGIBEV")
+  val estimators_of_interest: Array[String] = Array("ItGI", "ItGIBEV")
 
   // methodology params
-  val repetitions_for_variance_estimation = 40000
+  val repetitions_for_variance_estimation = 100000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
