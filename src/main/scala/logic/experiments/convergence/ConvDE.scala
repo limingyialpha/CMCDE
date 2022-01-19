@@ -23,7 +23,7 @@ case class ConvDE(output_folder: String) extends Experiment(output_folder) {
   val observation_num = 1000
 
   // GMCDE specific params
-  val interested_iteration_numbers: Vector[Int] = (30 until 100).toVector
+  val interested_iteration_numbers: Vector[Int] = (30 to 100).toVector
   val parallelize = 1
   val alpha = 0.5 // redundant, since GMCDE uses it internally for contrast
   val slice_technique = "c" // we believe center slice is the best
