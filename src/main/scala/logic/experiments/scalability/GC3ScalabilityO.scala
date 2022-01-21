@@ -20,7 +20,7 @@ case class GC3ScalabilityO(output_folder: String) extends Experiment(output_fold
   // data specific params
   val generator: DataGenerator = Independent(6, 0.0, "gaussian", 0)
   val dim_groups = Set(Set(0, 1), Set(2, 3), Set(4, 5))
-  val observation_nums_of_interest = Vector(10, 20, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200)
+  val observation_nums_of_interest = Vector(50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200)
 
   // GMCDE specific params
   val iteration_num = 50

@@ -20,7 +20,7 @@ case class CCScalabilityO(output_folder: String) extends Experiment(output_folde
   val generator: DataGenerator = Independent(4, 0.0, "gaussian", 0)
   val dim_x = Set(0, 1)
   val dim_y = Set(2, 3)
-  val observation_nums_of_interest = Vector(10, 20, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200)
+  val observation_nums_of_interest = Vector(50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200)
 
   // GMCDE specific params
   val iteration_num = 50

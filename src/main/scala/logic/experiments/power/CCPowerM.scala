@@ -37,7 +37,7 @@ case class CCPowerM(output_folder: String) extends Experiment(output_folder) {
   val dimensions_of_interest = Vector(4, 8, 12, 16)
   val noise_levels = 30
   val noises_of_interest: Vector[Double] = (0 to noise_levels).toVector.map(x => round(x.toDouble / noise_levels.toDouble, 2))
-  val observation_num_of_interest = Vector(100, 1000)
+  val observation_num_of_interest = Vector(1000)
 
   // GMCDE specific params
   val iteration_num = 50
