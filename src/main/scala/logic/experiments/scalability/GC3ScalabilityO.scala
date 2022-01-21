@@ -31,9 +31,9 @@ case class GC3ScalabilityO(output_folder: String) extends Experiment(output_fold
   val measure: GMCDE = GMCDE(parallelize, iteration_num)
 
   // methodology params
-  val repetitions = 500
+  val repetitions = 10000
   val unit = "ms"
-  val pre_run_repetitions = 500
+  val pre_run_repetitions = 10000
 
   def run(): Unit = {
     info(s"${formatter.format(java.util.Calendar.getInstance().getTime)} - Starting experiments - ${this.getClass.getSimpleName}")
